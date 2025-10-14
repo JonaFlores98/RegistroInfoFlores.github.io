@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard - Control Académico</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main>
+    <div class="topbar">
+      <h2>Panel principal</h2>
+      <button id="btn-logout" class="btn small outline">Cerrar sesión</button>
+    </div>
+
+    <div class="card">
+      <h3>Grados</h3>
+      <div id="grades-list" class="grid"></div>
+    </div>
+
+    <div class="card">
+      <h3>Agregar estudiante</h3>
+      <div class="row">
+        <select id="select-grade"></select>
+        <input type="text" id="new-student" placeholder="Nombre del estudiante" />
+        <button id="btn-add-student" class="btn">Agregar</button>
+      </div>
+    </div>
+
+    <footer class="footer muted">Sistema base - guardado en localStorage</footer>
+  </main>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

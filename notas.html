@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Notas - Control Académico</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <main>
+    <div class="topbar">
+      <button onclick="window.location.href='dashboard.html'" class="btn small outline">← Volver</button>
+      <h2 id="title"></h2>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <input type="text" id="new-col" placeholder="Nombre de la actividad" />
+        <button id="btn-add" class="btn small">Agregar columna</button>
+      </div>
+
+      <table class="table" id="notes-table">
+        <thead><tr id="notes-head"><th>#</th><th>Nombre</th><th>Prom.</th></tr></thead>
+        <tbody id="notes-body"></tbody>
+      </table>
+
+      <div class="row">
+        <button id="btn-save" class="btn">Guardar notas</button>
+        <button id="btn-export" class="btn outline small">Exportar CSV</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/notas.js"></script>
+</body>
+</html>

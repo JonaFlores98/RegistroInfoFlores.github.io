@@ -1,11 +1,129 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Control Académico - Jonathan</title>
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-    <h1>Hola ya estamos en linea</h1>
+  <main id="app">
+    <!-- Login -->
+    <section id="page-login" class="page active">
+      <div class="card">
+        <h1>Control Académico</h1>
+        <p class="muted">Ingrese con sus credenciales</p>
+        <form id="login-form">
+          <label>Usuario</label>
+          <input type="text" id="login-user" value="Docente" required />
+          <label>Contraseña</label>
+          <input type="password" id="login-pass" value="ugb2025" required />
+          <button type="submit" class="btn">Entrar</button>
+        </form>
+        <p class="muted small">Usuario por defecto: <b>Docente</b> / Contraseña: <b>ugb2025</b></p>
+      </div>
+    </section>
+
+    <!-- Dashboard -->
+    <section id="page-dashboard" class="page">
+      <div class="topbar">
+        <h2>Dashboard</h2>
+        <div>
+          <button id="btn-logout" class="btn small outline">Cerrar sesión</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Grados</h3>
+        <div id="grades-list" class="grid"></div>
+      </div>
+
+      <div class="card">
+        <h3>Administración rápida</h3>
+        <div class="row">
+          <select id="select-grade-add">
+            <!-- llenado vía JS -->
+          </select>
+          <input id="new-student-name" placeholder="Nombre de estudiante (ej: Juan Pérez)" />
+          <button id="btn-add-student" class="btn">Añadir estudiante</button>
+        </div>
+        <p class="muted small">Añade alumnos para probar la asistencia y las notas.</p>
+      </div>
+    </section>
+
+    <!-- Attendance -->
+    <section id="page-attendance" class="page">
+      <div class="topbar">
+        <button class="btn small outline" data-nav="dashboard">← Volver</button>
+        <h2 id="attendance-title">Asistencia</h2>
+        <div>
+          <span id="attendance-grade-name" class="muted"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <label>Fecha:</label>
+          <input type="date" id="attendance-date" />
+          <button id="btn-mark-all-present" class="btn small">Marcar todos presente</button>
+          <button id="btn-mark-all-absent" class="btn small outline">Marcar todos ausente</button>
+        </div>
+
+        <table id="attendance-table" class="table">
+          <thead>
+            <tr>
+              <th>#</th><th>Nombre</th><th>Presente</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <div class="row">
+          <button id="btn-save-attendance" class="btn">Guardar asistencia</button>
+          <button id="btn-export-attendance" class="btn outline small">Exportar CSV (fecha seleccionada)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grades / Notes -->
+    <section id="page-notes" class="page">
+      <div class="topbar">
+        <button class="btn small outline" data-nav="dashboard">← Volver</button>
+        <h2 id="notes-title">Notas</h2>
+        <div>
+          <span id="notes-grade-name" class="muted"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <label>Nombre de actividad / evaluación:</label>
+          <input id="new-assignment-name" placeholder="Ej: Trabajo Unidad 1" />
+          <button id="btn-add-assignment" class="btn small">Agregar columna</button>
+        </div>
+
+        <div class="table-wrap">
+          <table id="notes-table" class="table">
+            <thead>
+              <tr id="notes-head">
+                <th>#</th><th>Nombre</th><!-- columnas dinámicas --> <th>Prom.</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="row">
+          <button id="btn-save-notes" class="btn">Guardar notas</button>
+          <button id="btn-export-notes" class="btn outline small">Exportar CSV</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Small footer -->
+    <footer class="footer muted">Sistema base - guardado en localStorage • Hecho para aprender</footer>
+  </main>
+
+  <script src="js/main.js"></script>
 </body>
 </html>

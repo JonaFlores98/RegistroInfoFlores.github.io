@@ -1,6 +1,6 @@
 // dashboard.js
 const GRADOS = [
-  "Parvularia","1°","2°","3°","4°","5°","6°","7°","8°","9°","Bachillerato"
+  "Parvularia","2°","3°","4°","5°","6°","7°","8°","9°","1° Bachillerato","2° Bachillerato"
 ];
 const APP_KEY = "control_academico_v1";
 

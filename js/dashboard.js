@@ -43,14 +43,14 @@ class DashboardManager {
     async loadUserInfo(user) {
         const userNameElement = document.getElementById('user-name');
         const userAvatar = document.getElementById('user-avatar');
-        
+
         try {
             // Obtener información adicional de Firestore
             const userDoc = await this.db.collection('users').doc(user.uid).get();
-            
+
             if (userDoc.exists) {
                 this.userData = userDoc.data();
-                
+
                 // Mostrar nombre completo en el dashboard
                 if (this.userData.nombreCompleto && userNameElement) {
                     userNameElement.textContent = this.userData.nombreCompleto;
@@ -61,7 +61,7 @@ class DashboardManager {
                     // Fallback al email
                     userNameElement.textContent = user.email;
                 }
-                
+
                 // Actualizar avatar con iniciales
                 if (userAvatar) {
                     if (this.userData.nombreCompleto) {
@@ -72,7 +72,7 @@ class DashboardManager {
                         userAvatar.textContent = user.email.charAt(0).toUpperCase();
                     }
                 }
-                
+
                 console.log('Usuario cargado:', this.userData);
             } else {
                 // Si no existe el documento en Firestore, usar datos básicos
@@ -100,7 +100,7 @@ class DashboardManager {
     loadDashboardData() {
         // Cargar estadísticas basadas en los grados del usuario
         this.loadUserStatistics();
-        
+
         // Simular carga de actividad reciente
         setTimeout(() => {
             this.updateRecentActivity();
@@ -109,17 +109,17 @@ class DashboardManager {
 
     async loadUserStatistics() {
         if (!this.userData || !this.userData.grades) return;
-        
+
         try {
             // Aquí cargaríamos estadísticas reales de Firestore
             // Por ahora usamos datos de ejemplo basados en los grados del usuario
-            
+
             const totalStudents = this.userData.grades.length * 25; // Ejemplo: 25 estudiantes por grado
             const activeClasses = this.userData.grades.length;
-            
+
             document.getElementById('total-students').textContent = totalStudents;
             document.getElementById('active-classes').textContent = activeClasses + ' grupo' + (activeClasses !== 1 ? 's' : '');
-            
+
         } catch (error) {
             console.error('Error cargando estadísticas:', error);
         }
@@ -167,11 +167,14 @@ class DashboardManager {
 
     getRandomGrade() {
         if (!this.userData || !this.userData.grades) return '2° Grado';
-        
+
         const gradesMap = {
-            'parvularia': 'Parvularia',
+            'kinder4': 'Kinder 4',
+            'kinder5': 'Kinder 5',
+            'kinder6': 'Kinder 6',
+            'primero': '1° Grado',
             'segundo': '2° Grado',
-            'tercero': '3° Grado', 
+            'tercero': '3° Grado',
             'cuarto': '4° Grado',
             'quinto': '5° Grado',
             'sexto': '6° Grado',
@@ -181,7 +184,7 @@ class DashboardManager {
             'primero-bach': '1° Bachillerato',
             'segundo-bach': '2° Bachillerato'
         };
-        
+
         const randomIndex = Math.floor(Math.random() * this.userData.grades.length);
         const gradeKey = this.userData.grades[randomIndex];
         return gradesMap[gradeKey] || '2° Grado';

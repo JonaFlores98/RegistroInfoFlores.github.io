@@ -32,7 +32,7 @@ class StudentsManager {
     async loadUserInfo(user) {
         const userNameElement = document.getElementById('user-name');
         const userAvatar = document.getElementById('user-avatar');
-        
+
         try {
             const userDoc = await this.db.collection('users').doc(user.uid).get();
             if (userDoc.exists) {
@@ -51,7 +51,7 @@ class StudentsManager {
 
     setupEventListeners() {
         console.log('Configurando event listeners...'); // Para debug
-        
+
         // Botones principales - USAR DELEGACIÓN DE EVENTOS
         document.addEventListener('click', (e) => {
             if (e.target.id === 'add-student-btn' || e.target.closest('#add-student-btn')) {
@@ -65,7 +65,7 @@ class StudentsManager {
         // Modal - manera directa también por si acaso
         const addBtn = document.getElementById('add-student-btn');
         const emptyAddBtn = document.getElementById('empty-add-btn');
-        
+
         if (addBtn) {
             addBtn.addEventListener('click', () => this.showModal());
         }
@@ -77,24 +77,51 @@ class StudentsManager {
         document.getElementById('close-modal').addEventListener('click', () => this.hideModal());
         document.getElementById('cancel-btn').addEventListener('click', () => this.hideModal());
         document.getElementById('student-form').addEventListener('submit', (e) => this.handleSubmit(e));
-        
+
         // Búsqueda y filtros
         document.getElementById('search-input').addEventListener('input', (e) => this.handleSearch(e.target.value));
         document.getElementById('grade-filter').addEventListener('change', (e) => this.handleGradeFilter(e.target.value));
-        
+
         // Cerrar modal al hacer clic fuera
         document.getElementById('student-modal').addEventListener('click', (e) => {
             if (e.target.id === 'student-modal') this.hideModal();
         });
     }
 
+    // Función para manejar errores de Firebase de manera más elegante
+    handleFirebaseError(error, context) {
+        console.error(`Error en ${context}:`, error);
+
+        if (error.code === 'failed-precondition') {
+            console.log(`Índice requerido para: ${context}`);
+            return true; // Indicar que es un error de índice
+        }
+
+        if (error.code === 'permission-denied') {
+            alert('No tienes permisos para realizar esta acción');
+            return true;
+        }
+
+        return false;
+    }
+
     async loadStudents() {
         try {
-            const studentsSnapshot = await this.db.collection('estudiantes')
-                .where('profesorId', '==', this.currentUser.uid)
-                .orderBy('nombreCompleto')
-                .get();
-            
+            // Primero intentamos con el ordenamiento
+            let studentsSnapshot;
+            try {
+                studentsSnapshot = await this.db.collection('estudiantes')
+                    .where('profesorId', '==', this.currentUser.uid)
+                    .orderBy('nombreCompleto')
+                    .get();
+            } catch (indexError) {
+                // Si falla por índice, cargamos sin ordenar
+                console.log('Cargando estudiantes sin ordenamiento...');
+                studentsSnapshot = await this.db.collection('estudiantes')
+                    .where('profesorId', '==', this.currentUser.uid)
+                    .get();
+            }
+
             this.students = [];
             studentsSnapshot.forEach(doc => {
                 this.students.push({
@@ -102,26 +129,39 @@ class StudentsManager {
                     ...doc.data()
                 });
             });
-            
+
+            // Ordenar localmente si no se pudo ordenar en la consulta
+            this.students.sort((a, b) => a.nombreCompleto?.localeCompare(b.nombreCompleto || ''));
+
             this.filteredStudents = [...this.students];
             this.renderStudents();
             this.updateStudentsCount();
-            
+
         } catch (error) {
             console.error('Error cargando estudiantes:', error);
-            alert('Error al cargar los estudiantes: ' + error.message);
+            // Mostrar mensaje más amigable
+            if (error.code === 'failed-precondition') {
+                console.log('Esperando que se cree el índice de Firestore...');
+                // No mostrar alerta molesta, solo cargar datos básicos
+                this.students = [];
+                this.filteredStudents = [];
+                this.renderStudents();
+                this.updateStudentsCount();
+            } else {
+                alert('Error al cargar los estudiantes: ' + error.message);
+            }
         }
     }
 
     setupGradesFilter() {
         if (!this.userData || !this.userData.grades) return;
-        
+
         const gradeFilter = document.getElementById('grade-filter');
         const gradoSelect = document.getElementById('grado');
-        
+
         const gradesMap = {
             'kinder4': 'Kinder 4',
-            'kinder5': 'Kinder 5', 
+            'kinder5': 'Kinder 5',
             'kinder6': 'Kinder 6',
             'primero': '1° Grado',
             'segundo': '2° Grado',
@@ -135,11 +175,11 @@ class StudentsManager {
             'primero-bach': '1° Bachillerato',
             'segundo-bach': '2° Bachillerato'
         };
-        
+
         // Limpiar opciones existentes (excepto la primera)
         while (gradeFilter.children.length > 1) gradeFilter.removeChild(gradeFilter.lastChild);
         while (gradoSelect.children.length > 1) gradoSelect.removeChild(gradoSelect.lastChild);
-        
+
         // Agregar grados del usuario
         this.userData.grades.forEach(gradeKey => {
             const gradeName = gradesMap[gradeKey];
@@ -148,7 +188,7 @@ class StudentsManager {
                 option1.value = gradeKey;
                 option1.textContent = gradeName;
                 gradeFilter.appendChild(option1);
-                
+
                 const option2 = document.createElement('option');
                 option2.value = gradeKey;
                 option2.textContent = gradeName;
@@ -159,7 +199,7 @@ class StudentsManager {
 
     renderStudents() {
         const container = document.getElementById('students-container');
-        
+
         if (this.filteredStudents.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
@@ -175,10 +215,10 @@ class StudentsManager {
             document.getElementById('empty-add-btn-2').addEventListener('click', () => this.showModal());
             return;
         }
-        
+
         const gradesMap = {
             'kinder4': 'Kinder 4',
-            'kinder5': 'Kinder 5', 
+            'kinder5': 'Kinder 5',
             'kinder6': 'Kinder 6',
             'primero': '1° Grado',
             'segundo': '2° Grado',
@@ -192,7 +232,7 @@ class StudentsManager {
             'primero-bach': '1° Bachillerato',
             'segundo-bach': '2° Bachillerato'
         };
-        
+
         container.innerHTML = `
             <div class="students-grid">
                 ${this.filteredStudents.map(student => `
@@ -252,7 +292,7 @@ class StudentsManager {
                 `).join('')}
             </div>
         `;
-        
+
         // Agregar event listeners a los botones con delegación
         container.addEventListener('click', (e) => {
             if (e.target.classList.contains('edit-btn') || e.target.closest('.edit-btn')) {
@@ -281,7 +321,7 @@ class StudentsManager {
         const modal = document.getElementById('student-modal');
         const title = document.getElementById('modal-title');
         const form = document.getElementById('student-form');
-        
+
         if (student) {
             title.textContent = 'Editar Estudiante';
             this.populateForm(student);
@@ -289,7 +329,7 @@ class StudentsManager {
             title.textContent = 'Agregar Estudiante';
             form.reset();
         }
-        
+
         modal.style.display = 'block';
     }
 
@@ -313,14 +353,14 @@ class StudentsManager {
 
     async handleSubmit(e) {
         e.preventDefault();
-        
+
         const submitBtn = document.getElementById('submit-btn');
         const originalText = submitBtn.innerHTML;
-        
+
         try {
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
             submitBtn.disabled = true;
-            
+
             const studentData = {
                 nombreCompleto: document.getElementById('nombre-completo').value.trim(),
                 grado: document.getElementById('grado').value,
@@ -332,17 +372,17 @@ class StudentsManager {
                 emailEncargado: document.getElementById('email').value.trim() || '',
                 observaciones: document.getElementById('observaciones').value.trim() || '',
                 profesorId: this.currentUser.uid,
-                fechaRegistro: this.editingStudent ? 
-                    this.editingStudent.fechaRegistro : 
+                fechaRegistro: this.editingStudent ?
+                    this.editingStudent.fechaRegistro :
                     new Date().toISOString().split('T')[0],
                 estado: 'activo'
             };
-            
+
             // Validación básica
             if (!studentData.nombreCompleto || !studentData.grado) {
                 throw new Error('Nombre completo y grado son obligatorios');
             }
-            
+
             if (this.editingStudent) {
                 // Actualizar estudiante existente
                 await this.db.collection('estudiantes').doc(this.editingStudent.id).update(studentData);
@@ -350,10 +390,10 @@ class StudentsManager {
                 // Crear nuevo estudiante
                 await this.db.collection('estudiantes').add(studentData);
             }
-            
+
             this.hideModal();
             await this.loadStudents();
-            
+
         } catch (error) {
             alert('Error al guardar estudiante: ' + error.message);
         } finally {
@@ -373,7 +413,7 @@ class StudentsManager {
         if (!confirm('¿Estás seguro de que quieres eliminar este estudiante? Esta acción no se puede deshacer.')) {
             return;
         }
-        
+
         try {
             await this.db.collection('estudiantes').doc(studentId).delete();
             await this.loadStudents();
@@ -384,7 +424,7 @@ class StudentsManager {
 
     handleSearch(searchTerm) {
         const term = searchTerm.toLowerCase().trim();
-        
+
         if (term === '') {
             this.filteredStudents = [...this.students];
         } else {
@@ -394,7 +434,7 @@ class StudentsManager {
                 (student.encargado && student.encargado.toLowerCase().includes(term))
             );
         }
-        
+
         this.renderStudents();
         this.updateStudentsCount();
     }
@@ -407,7 +447,7 @@ class StudentsManager {
                 student.grado === grade
             );
         }
-        
+
         this.renderStudents();
         this.updateStudentsCount();
     }
@@ -416,7 +456,7 @@ class StudentsManager {
         const countElement = document.getElementById('students-count');
         const total = this.students.length;
         const filtered = this.filteredStudents.length;
-        
+
         if (total === filtered) {
             countElement.textContent = `${total} estudiante${total !== 1 ? 's' : ''}`;
         } else {

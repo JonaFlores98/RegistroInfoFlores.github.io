@@ -8,6 +8,9 @@ class DashboardManager {
         this.selectedGrade = 'all'; // Filtro por grado
         this.init();
     }
+    navigateToAttendance() {
+        window.location.href = 'attendance.html';
+    }
 
     init() {
         this.setupAuthListener();

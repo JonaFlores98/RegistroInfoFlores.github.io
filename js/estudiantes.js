@@ -13,7 +13,6 @@ class StudentsManager {
 
     init() {
         this.setupAuthListener();
-        this.setupEventListeners();
     }
 
     setupAuthListener() {
@@ -23,6 +22,7 @@ class StudentsManager {
             } else {
                 this.currentUser = user;
                 await this.loadUserInfo(user);
+                this.setupEventListeners(); // ¡IMPORTANTE: Mover aquí!
                 await this.loadStudents();
                 this.setupGradesFilter();
             }
@@ -32,7 +32,7 @@ class StudentsManager {
     async loadUserInfo(user) {
         const userNameElement = document.getElementById('user-name');
         const userAvatar = document.getElementById('user-avatar');
-
+        
         try {
             const userDoc = await this.db.collection('users').doc(user.uid).get();
             if (userDoc.exists) {
@@ -50,19 +50,38 @@ class StudentsManager {
     }
 
     setupEventListeners() {
-        // Botones principales
-        document.getElementById('add-student-btn').addEventListener('click', () => this.showModal());
-        document.getElementById('empty-add-btn').addEventListener('click', () => this.showModal());
+        console.log('Configurando event listeners...'); // Para debug
+        
+        // Botones principales - USAR DELEGACIÓN DE EVENTOS
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'add-student-btn' || e.target.closest('#add-student-btn')) {
+                this.showModal();
+            }
+            if (e.target.id === 'empty-add-btn' || e.target.closest('#empty-add-btn')) {
+                this.showModal();
+            }
+        });
 
-        // Modal
+        // Modal - manera directa también por si acaso
+        const addBtn = document.getElementById('add-student-btn');
+        const emptyAddBtn = document.getElementById('empty-add-btn');
+        
+        if (addBtn) {
+            addBtn.addEventListener('click', () => this.showModal());
+        }
+        if (emptyAddBtn) {
+            emptyAddBtn.addEventListener('click', () => this.showModal());
+        }
+
+        // Resto de event listeners
         document.getElementById('close-modal').addEventListener('click', () => this.hideModal());
         document.getElementById('cancel-btn').addEventListener('click', () => this.hideModal());
         document.getElementById('student-form').addEventListener('submit', (e) => this.handleSubmit(e));
-
+        
         // Búsqueda y filtros
         document.getElementById('search-input').addEventListener('input', (e) => this.handleSearch(e.target.value));
         document.getElementById('grade-filter').addEventListener('change', (e) => this.handleGradeFilter(e.target.value));
-
+        
         // Cerrar modal al hacer clic fuera
         document.getElementById('student-modal').addEventListener('click', (e) => {
             if (e.target.id === 'student-modal') this.hideModal();
@@ -75,7 +94,7 @@ class StudentsManager {
                 .where('profesorId', '==', this.currentUser.uid)
                 .orderBy('nombreCompleto')
                 .get();
-
+            
             this.students = [];
             studentsSnapshot.forEach(doc => {
                 this.students.push({
@@ -83,11 +102,11 @@ class StudentsManager {
                     ...doc.data()
                 });
             });
-
+            
             this.filteredStudents = [...this.students];
             this.renderStudents();
             this.updateStudentsCount();
-
+            
         } catch (error) {
             console.error('Error cargando estudiantes:', error);
             alert('Error al cargar los estudiantes: ' + error.message);
@@ -96,13 +115,13 @@ class StudentsManager {
 
     setupGradesFilter() {
         if (!this.userData || !this.userData.grades) return;
-
+        
         const gradeFilter = document.getElementById('grade-filter');
         const gradoSelect = document.getElementById('grado');
-
+        
         const gradesMap = {
             'kinder4': 'Kinder 4',
-            'kinder5': 'Kinder 5',
+            'kinder5': 'Kinder 5', 
             'kinder6': 'Kinder 6',
             'primero': '1° Grado',
             'segundo': '2° Grado',
@@ -116,11 +135,11 @@ class StudentsManager {
             'primero-bach': '1° Bachillerato',
             'segundo-bach': '2° Bachillerato'
         };
-
+        
         // Limpiar opciones existentes (excepto la primera)
         while (gradeFilter.children.length > 1) gradeFilter.removeChild(gradeFilter.lastChild);
         while (gradoSelect.children.length > 1) gradoSelect.removeChild(gradoSelect.lastChild);
-
+        
         // Agregar grados del usuario
         this.userData.grades.forEach(gradeKey => {
             const gradeName = gradesMap[gradeKey];
@@ -129,7 +148,7 @@ class StudentsManager {
                 option1.value = gradeKey;
                 option1.textContent = gradeName;
                 gradeFilter.appendChild(option1);
-
+                
                 const option2 = document.createElement('option');
                 option2.value = gradeKey;
                 option2.textContent = gradeName;
@@ -140,7 +159,7 @@ class StudentsManager {
 
     renderStudents() {
         const container = document.getElementById('students-container');
-
+        
         if (this.filteredStudents.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
@@ -152,13 +171,14 @@ class StudentsManager {
                     </button>
                 </div>
             `;
+            // Agregar event listener al nuevo botón
             document.getElementById('empty-add-btn-2').addEventListener('click', () => this.showModal());
             return;
         }
-
+        
         const gradesMap = {
             'kinder4': 'Kinder 4',
-            'kinder5': 'Kinder 5',
+            'kinder5': 'Kinder 5', 
             'kinder6': 'Kinder 6',
             'primero': '1° Grado',
             'segundo': '2° Grado',
@@ -172,7 +192,7 @@ class StudentsManager {
             'primero-bach': '1° Bachillerato',
             'segundo-bach': '2° Bachillerato'
         };
-
+        
         container.innerHTML = `
             <div class="students-grid">
                 ${this.filteredStudents.map(student => `
@@ -232,20 +252,17 @@ class StudentsManager {
                 `).join('')}
             </div>
         `;
-
-        // Agregar event listeners a los botones
-        container.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        
+        // Agregar event listeners a los botones con delegación
+        container.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-btn') || e.target.closest('.edit-btn')) {
                 const studentId = e.target.closest('.edit-btn').dataset.id;
                 this.editStudent(studentId);
-            });
-        });
-
-        container.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            }
+            if (e.target.classList.contains('delete-btn') || e.target.closest('.delete-btn')) {
                 const studentId = e.target.closest('.delete-btn').dataset.id;
                 this.deleteStudent(studentId);
-            });
+            }
         });
     }
 
@@ -259,11 +276,12 @@ class StudentsManager {
     }
 
     showModal(student = null) {
+        console.log('Mostrando modal...'); // Para debug
         this.editingStudent = student;
         const modal = document.getElementById('student-modal');
         const title = document.getElementById('modal-title');
         const form = document.getElementById('student-form');
-
+        
         if (student) {
             title.textContent = 'Editar Estudiante';
             this.populateForm(student);
@@ -271,7 +289,7 @@ class StudentsManager {
             title.textContent = 'Agregar Estudiante';
             form.reset();
         }
-
+        
         modal.style.display = 'block';
     }
 
@@ -295,14 +313,14 @@ class StudentsManager {
 
     async handleSubmit(e) {
         e.preventDefault();
-
+        
         const submitBtn = document.getElementById('submit-btn');
         const originalText = submitBtn.innerHTML;
-
+        
         try {
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
             submitBtn.disabled = true;
-
+            
             const studentData = {
                 nombreCompleto: document.getElementById('nombre-completo').value.trim(),
                 grado: document.getElementById('grado').value,
@@ -314,17 +332,17 @@ class StudentsManager {
                 emailEncargado: document.getElementById('email').value.trim() || '',
                 observaciones: document.getElementById('observaciones').value.trim() || '',
                 profesorId: this.currentUser.uid,
-                fechaRegistro: this.editingStudent ?
-                    this.editingStudent.fechaRegistro :
+                fechaRegistro: this.editingStudent ? 
+                    this.editingStudent.fechaRegistro : 
                     new Date().toISOString().split('T')[0],
                 estado: 'activo'
             };
-
+            
             // Validación básica
             if (!studentData.nombreCompleto || !studentData.grado) {
                 throw new Error('Nombre completo y grado son obligatorios');
             }
-
+            
             if (this.editingStudent) {
                 // Actualizar estudiante existente
                 await this.db.collection('estudiantes').doc(this.editingStudent.id).update(studentData);
@@ -332,10 +350,10 @@ class StudentsManager {
                 // Crear nuevo estudiante
                 await this.db.collection('estudiantes').add(studentData);
             }
-
+            
             this.hideModal();
             await this.loadStudents();
-
+            
         } catch (error) {
             alert('Error al guardar estudiante: ' + error.message);
         } finally {
@@ -355,7 +373,7 @@ class StudentsManager {
         if (!confirm('¿Estás seguro de que quieres eliminar este estudiante? Esta acción no se puede deshacer.')) {
             return;
         }
-
+        
         try {
             await this.db.collection('estudiantes').doc(studentId).delete();
             await this.loadStudents();
@@ -366,7 +384,7 @@ class StudentsManager {
 
     handleSearch(searchTerm) {
         const term = searchTerm.toLowerCase().trim();
-
+        
         if (term === '') {
             this.filteredStudents = [...this.students];
         } else {
@@ -376,7 +394,7 @@ class StudentsManager {
                 (student.encargado && student.encargado.toLowerCase().includes(term))
             );
         }
-
+        
         this.renderStudents();
         this.updateStudentsCount();
     }
@@ -389,7 +407,7 @@ class StudentsManager {
                 student.grado === grade
             );
         }
-
+        
         this.renderStudents();
         this.updateStudentsCount();
     }
@@ -398,7 +416,7 @@ class StudentsManager {
         const countElement = document.getElementById('students-count');
         const total = this.students.length;
         const filtered = this.filteredStudents.length;
-
+        
         if (total === filtered) {
             countElement.textContent = `${total} estudiante${total !== 1 ? 's' : ''}`;
         } else {

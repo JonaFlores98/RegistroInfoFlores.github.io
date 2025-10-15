@@ -9,79 +9,89 @@
 </head>
 <body>
     <div class="container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2>Sistema Docente</h2>
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-chalkboard-teacher"></i> Sistema Docente</h1>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <span id="userName">Usuario</span>
+                <button class="logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
             </div>
-            <ul class="sidebar-menu">
-                <li><a href="dashboard.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                <li><a href="views/asistencia.html"><i class="fas fa-clipboard-check"></i> Asistencia</a></li>
-                <li><a href="views/calificaciones.html"><i class="fas fa-graduation-cap"></i> Calificaciones</a></li>
-                <li><a href="views/estudiantes.html"><i class="fas fa-users"></i> Estudiantes</a></li>
-                <li><a href="views/clases.html"><i class="fas fa-book"></i> Clases</a></li>
-                <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
-            </ul>
         </div>
 
-        <!-- Main Content -->
+        <!-- Contenido del dashboard -->
         <div class="main-content">
-            <div class="header">
-                <h1>Panel de Control</h1>
-                <div class="user-info">
-                    <div class="user-avatar">JD</div>
-                    <span id="user-name">Juan Docente</span>
-                </div>
-            </div>
-
-            <!-- Dashboard Content -->
             <div class="content-area">
-                <h2>Resumen General</h2>
+                <h2>¡Bienvenido al Sistema Docente!</h2>
+                <p>Selecciona una opción del menú para comenzar.</p>
                 
                 <div class="dashboard-cards">
                     <div class="card">
-                        <i class="fas fa-users"></i>
-                        <h3>Estudiantes</h3>
-                        <p>Total: <span id="total-students">245</span></p>
-                    </div>
-                    <div class="card">
                         <i class="fas fa-clipboard-check"></i>
-                        <h3>Asistencia Hoy</h3>
-                        <p id="attendance-today">95% de presencia</p>
+                        <h3>Asistencia</h3>
+                        <p>Registro diario</p>
                     </div>
                     <div class="card">
                         <i class="fas fa-graduation-cap"></i>
-                        <h3>Promedio General</h3>
-                        <p id="average-grade">8.2 / 10</p>
+                        <h3>Calificaciones</h3>
+                        <p>Gestión de notas</p>
                     </div>
-                    <div class="card">
-                        <i class="fas fa-book"></i>
-                        <h3>Clases Activas</h3>
-                        <p id="active-classes">12 grupos</p>
-                    </div>
-                </div>
-
-                <h2>Actividad Reciente</h2>
-                <div class="table-container">
-                    <table id="recent-activity">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Clase</th>
-                                <th>Actividad</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Los datos se cargarán con JavaScript -->
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="js/dashboard.js"></script>
-    <script src="js/auth.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Configuración
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmqWjpS2bYaNtPA_LhYLMh5KuwOOmEk2Y",
+            authDomain: "sistema-docente-informatica.firebaseapp.com",
+            projectId: "sistema-docente-informatica",
+            storageBucket: "sistema-docente-informatica.firebasestorage.app",
+            messagingSenderId: "317682841841",
+            appId: "1:317682841841:web:e0022e870491b701365150"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Proteger el dashboard
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                // Si no hay usuario, redirigir al login
+                window.location.href = 'login.html';
+            } else {
+                // Cargar información del usuario
+                document.getElementById('userAvatar').textContent = user.email.charAt(0).toUpperCase();
+                document.getElementById('userName').textContent = user.email;
+                
+                // Intentar obtener nombre desde Firestore
+                db.collection('users').doc(user.uid).get().then((doc) => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        if (userData.name) {
+                            document.getElementById('userName').textContent = userData.name;
+                            document.getElementById('userAvatar').textContent = userData.name.charAt(0).toUpperCase();
+                        }
+                    }
+                });
+            }
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            auth.signOut().then(() => {
+                window.location.href = 'login.html';
+            });
+        });
+    </script>
 </body>
 </html>

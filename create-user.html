@@ -33,14 +33,26 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <script src="js/firebase-config-compat.js"></script>
-    
     <script>
+        // Configuración
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmqWjpS2bYaNtPA_LhYLMh5KuwOOmEk2Y",
+            authDomain: "sistema-docente-informatica.firebaseapp.com",
+            projectId: "sistema-docente-informatica",
+            storageBucket: "sistema-docente-informatica.firebasestorage.app",
+            messagingSenderId: "317682841841",
+            appId: "1:317682841841:web:e0022e870491b701365150"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
         document.getElementById('create-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -53,17 +65,16 @@
                 button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
                 button.disabled = true;
                 
-                // Crear usuario en Authentication
+                // Crear usuario
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
                 
-                // Guardar datos en Firestore
+                // Guardar datos adicionales
                 await db.collection('users').doc(user.uid).set({
                     name: name,
                     email: email,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    role: 'teacher',
-                    grades: ['parvularia', 'segundo', 'tercero', 'cuarto', 'quinto', 'sexto', 'septimo', 'octavo', 'noveno', 'primero-bach', 'segundo-bach']
+                    role: 'teacher'
                 });
                 
                 alert('¡Usuario creado exitosamente! Ahora puedes iniciar sesión');

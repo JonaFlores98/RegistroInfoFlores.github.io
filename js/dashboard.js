@@ -3,6 +3,8 @@ class DashboardManager {
     constructor() {
         this.auth = firebase.auth();
         this.db = firebase.firestore();
+        this.currentUser = null;
+        this.userData = null;
         this.init();
     }
 
@@ -13,13 +15,15 @@ class DashboardManager {
 
     setupAuthListener() {
         // Protección del dashboard - solo redirige si NO hay usuario
-        this.auth.onAuthStateChanged((user) => {
+        this.auth.onAuthStateChanged(async (user) => {
             if (!user) {
                 // Si no hay usuario, redirigir al login
                 window.location.href = 'login.html';
             } else {
-                // Cargar información del usuario y datos del dashboard
-                this.loadUserInfo(user);
+                this.currentUser = user;
+                // Cargar información del usuario desde Firestore
+                await this.loadUserInfo(user);
+                // Cargar datos del dashboard
                 this.loadDashboardData();
             }
         });
@@ -40,55 +44,105 @@ class DashboardManager {
         const userNameElement = document.getElementById('user-name');
         const userAvatar = document.getElementById('user-avatar');
         
-        if (userNameElement) {
-            userNameElement.textContent = user.email;
-        }
-        
-        if (userAvatar) {
-            userAvatar.textContent = user.email.charAt(0).toUpperCase();
-        }
-
-        // Intentar obtener información adicional de Firestore
         try {
+            // Obtener información adicional de Firestore
             const userDoc = await this.db.collection('users').doc(user.uid).get();
+            
             if (userDoc.exists) {
-                const userData = userDoc.data();
-                if (userData.name && userNameElement) {
-                    userNameElement.textContent = userData.name;
+                this.userData = userDoc.data();
+                
+                // Mostrar nombre completo en el dashboard
+                if (this.userData.nombreCompleto && userNameElement) {
+                    userNameElement.textContent = this.userData.nombreCompleto;
+                } else if (this.userData.nombreUsuario && userNameElement) {
+                    // Fallback al nombre de usuario si no hay nombre completo
+                    userNameElement.textContent = this.userData.nombreUsuario;
+                } else {
+                    // Fallback al email
+                    userNameElement.textContent = user.email;
                 }
-                if (userData.name && userAvatar) {
-                    userAvatar.textContent = userData.name.charAt(0).toUpperCase();
+                
+                // Actualizar avatar con iniciales
+                if (userAvatar) {
+                    if (this.userData.nombreCompleto) {
+                        userAvatar.textContent = this.getInitials(this.userData.nombreCompleto);
+                    } else if (this.userData.nombreUsuario) {
+                        userAvatar.textContent = this.userData.nombreUsuario.charAt(0).toUpperCase();
+                    } else {
+                        userAvatar.textContent = user.email.charAt(0).toUpperCase();
+                    }
                 }
+                
+                console.log('Usuario cargado:', this.userData);
+            } else {
+                // Si no existe el documento en Firestore, usar datos básicos
+                console.warn('No se encontraron datos adicionales del usuario en Firestore');
+                if (userNameElement) userNameElement.textContent = user.email;
+                if (userAvatar) userAvatar.textContent = user.email.charAt(0).toUpperCase();
             }
         } catch (error) {
             console.error('Error cargando información del usuario:', error);
+            // Fallback a datos básicos en caso de error
+            if (userNameElement) userNameElement.textContent = user.email;
+            if (userAvatar) userAvatar.textContent = user.email.charAt(0).toUpperCase();
         }
     }
 
+    getInitials(fullName) {
+        return fullName
+            .split(' ')
+            .map(name => name.charAt(0))
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+    }
+
     loadDashboardData() {
-        // Simular carga de datos (en app real, vendría de Firebase)
+        // Cargar estadísticas basadas en los grados del usuario
+        this.loadUserStatistics();
+        
+        // Simular carga de actividad reciente
         setTimeout(() => {
             this.updateRecentActivity();
         }, 1000);
     }
 
+    async loadUserStatistics() {
+        if (!this.userData || !this.userData.grades) return;
+        
+        try {
+            // Aquí cargaríamos estadísticas reales de Firestore
+            // Por ahora usamos datos de ejemplo basados en los grados del usuario
+            
+            const totalStudents = this.userData.grades.length * 25; // Ejemplo: 25 estudiantes por grado
+            const activeClasses = this.userData.grades.length;
+            
+            document.getElementById('total-students').textContent = totalStudents;
+            document.getElementById('active-classes').textContent = activeClasses + ' grupo' + (activeClasses !== 1 ? 's' : '');
+            
+        } catch (error) {
+            console.error('Error cargando estadísticas:', error);
+        }
+    }
+
     updateRecentActivity() {
+        // Datos de ejemplo - en una app real esto vendría de Firestore
         const activityData = [
             {
-                date: '15/05/2023',
-                class: '2° Grado - Informática',
+                date: new Date().toLocaleDateString('es-ES'),
+                class: this.getRandomGrade() + ' - Informática',
                 activity: 'Registro de asistencia',
                 status: 'completed'
             },
             {
-                date: '14/05/2023',
-                class: '5° Grado - Programación',
+                date: new Date(Date.now() - 86400000).toLocaleDateString('es-ES'),
+                class: this.getRandomGrade() + ' - Programación',
                 activity: 'Calificación de examen',
                 status: 'completed'
             },
             {
-                date: '13/05/2023',
-                class: '9° Grado - Base de Datos',
+                date: new Date(Date.now() - 172800000).toLocaleDateString('es-ES'),
+                class: this.getRandomGrade() + ' - Base de Datos',
                 activity: 'Registro de notas prácticas',
                 status: 'pending'
             }
@@ -111,9 +165,30 @@ class DashboardManager {
         }
     }
 
+    getRandomGrade() {
+        if (!this.userData || !this.userData.grades) return '2° Grado';
+        
+        const gradesMap = {
+            'parvularia': 'Parvularia',
+            'segundo': '2° Grado',
+            'tercero': '3° Grado', 
+            'cuarto': '4° Grado',
+            'quinto': '5° Grado',
+            'sexto': '6° Grado',
+            'septimo': '7° Grado',
+            'octavo': '8° Grado',
+            'noveno': '9° Grado',
+            'primero-bach': '1° Bachillerato',
+            'segundo-bach': '2° Bachillerato'
+        };
+        
+        const randomIndex = Math.floor(Math.random() * this.userData.grades.length);
+        const gradeKey = this.userData.grades[randomIndex];
+        return gradesMap[gradeKey] || '2° Grado';
+    }
+
     handleLogout() {
         this.auth.signOut().then(() => {
-            // El onAuthStateChanged detectará el logout y redirigirá automáticamente
             console.log('Sesión cerrada exitosamente');
         }).catch((error) => {
             console.error('Error al cerrar sesión:', error);

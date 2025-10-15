@@ -1,29 +1,44 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Login - Control Académico</title>
-  <link rel="stylesheet" href="css/styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Docente - Inicio</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <main>
-    <section id="page-login" class="page active">
-      <div class="card">
-        <h1>Control Académico</h1>
-        <p class="muted">Ingrese con sus credenciales</p>
-        <form id="login-form">
-          <label>Usuario</label>
-          <input type="text" id="login-user" placeholder="Usuario" required />
-          <label>Contraseña</label>
-          <input type="password" id="login-pass" placeholder="Contraseña" required />
-          <button type="submit" class="btn">Entrar</button>
-        </form>
-        <p class="muted small">Usuario: <b>Docente</b> / Contraseña: <b>ugb2025</b></p>
-      </div>
-    </section>
-  </main>
+    <div class="container">
+        <header>
+            <h1>Sistema de Gestión Docente</h1>
+            <p>Control de Asistencia y Calificaciones</p>
+        </header>
+        
+        <main class="landing-main">
+            <div class="landing-content">
+                <h2>Bienvenido al Sistema</h2>
+                <p>Gestiona fácilmente la asistencia y calificaciones de tus estudiantes</p>
+                <div class="landing-features">
+                    <div class="feature-card">
+                        <i class="fas fa-clipboard-check"></i>
+                        <h3>Control de Asistencia</h3>
+                        <p>Registro diario de presencia estudiantil</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-graduation-cap"></i>
+                        <h3>Gestión de Calificaciones</h3>
+                        <p>Sistema completo de evaluación</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>Reportes y Estadísticas</h3>
+                        <p>Análisis del rendimiento estudiantil</p>
+                    </div>
+                </div>
+                <a href="login.html" class="btn btn-primary">Iniciar Sesión</a>
+            </div>
+        </main>
+    </div>
 
-  <script src="js/login.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 </body>
 </html>

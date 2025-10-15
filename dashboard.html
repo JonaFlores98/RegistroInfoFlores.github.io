@@ -1,35 +1,87 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard - Control Académico</title>
-  <link rel="stylesheet" href="css/styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema Docente</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <main>
-    <div class="topbar">
-      <h2>Panel principal</h2>
-      <button id="btn-logout" class="btn small outline">Cerrar sesión</button>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Sistema Docente</h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="views/asistencia.html"><i class="fas fa-clipboard-check"></i> Asistencia</a></li>
+                <li><a href="views/calificaciones.html"><i class="fas fa-graduation-cap"></i> Calificaciones</a></li>
+                <li><a href="views/estudiantes.html"><i class="fas fa-users"></i> Estudiantes</a></li>
+                <li><a href="views/clases.html"><i class="fas fa-book"></i> Clases</a></li>
+                <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Panel de Control</h1>
+                <div class="user-info">
+                    <div class="user-avatar">JD</div>
+                    <span id="user-name">Juan Docente</span>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="content-area">
+                <h2>Resumen General</h2>
+                
+                <div class="dashboard-cards">
+                    <div class="card">
+                        <i class="fas fa-users"></i>
+                        <h3>Estudiantes</h3>
+                        <p>Total: <span id="total-students">245</span></p>
+                    </div>
+                    <div class="card">
+                        <i class="fas fa-clipboard-check"></i>
+                        <h3>Asistencia Hoy</h3>
+                        <p id="attendance-today">95% de presencia</p>
+                    </div>
+                    <div class="card">
+                        <i class="fas fa-graduation-cap"></i>
+                        <h3>Promedio General</h3>
+                        <p id="average-grade">8.2 / 10</p>
+                    </div>
+                    <div class="card">
+                        <i class="fas fa-book"></i>
+                        <h3>Clases Activas</h3>
+                        <p id="active-classes">12 grupos</p>
+                    </div>
+                </div>
+
+                <h2>Actividad Reciente</h2>
+                <div class="table-container">
+                    <table id="recent-activity">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Clase</th>
+                                <th>Actividad</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Los datos se cargarán con JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="card">
-      <h3>Grados</h3>
-      <div id="grades-list" class="grid"></div>
-    </div>
-
-    <div class="card">
-      <h3>Agregar estudiante</h3>
-      <div class="row">
-        <select id="select-grade"></select>
-        <input type="text" id="new-student" placeholder="Nombre del estudiante" />
-        <button id="btn-add-student" class="btn">Agregar</button>
-      </div>
-    </div>
-
-    <footer class="footer muted">Sistema base - guardado en localStorage</footer>
-  </main>
-
-  <script src="js/dashboard.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/auth.js"></script>
 </body>
 </html>

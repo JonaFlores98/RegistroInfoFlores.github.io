@@ -1,74 +1,68 @@
-// dashboard.js
-const GRADOS = [
-  "Parvularia","1°","2°","3°","4°","5°","6°","7°","8°","9°","Bachillerato"
-];
-const APP_KEY = "control_academico_v1";
+// Dashboard functionality
+class DashboardManager {
+    constructor() {
+        this.init();
+    }
 
-if (!sessionStorage.getItem("logged")) {
-  window.location.href = "index.html";
+    init() {
+        this.loadDashboardData();
+        this.addEventListeners();
+    }
+
+    addEventListeners() {
+        // Add any dashboard-specific event listeners here
+    }
+
+    loadDashboardData() {
+        // Simulate loading data (in real app, this would come from Firebase)
+        setTimeout(() => {
+            this.updateRecentActivity();
+        }, 1000);
+    }
+
+    updateRecentActivity() {
+        const activityData = [
+            {
+                date: '15/05/2023',
+                class: '2° Grado - Informática',
+                activity: 'Registro de asistencia',
+                status: 'completed'
+            },
+            {
+                date: '14/05/2023',
+                class: '5° Grado - Programación',
+                activity: 'Calificación de examen',
+                status: 'completed'
+            },
+            {
+                date: '13/05/2023',
+                class: '9° Grado - Base de Datos',
+                activity: 'Registro de notas prácticas',
+                status: 'pending'
+            }
+        ];
+
+        const tbody = document.querySelector('#recent-activity tbody');
+        if (tbody) {
+            tbody.innerHTML = activityData.map(item => `
+                <tr>
+                    <td>${item.date}</td>
+                    <td>${item.class}</td>
+                    <td>${item.activity}</td>
+                    <td>
+                        <span class="badge badge-${item.status === 'completed' ? 'presente' : 'ausente'}">
+                            ${item.status === 'completed' ? 'Completado' : 'Pendiente'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
 }
 
-function loadStore(){
-  const raw = localStorage.getItem(APP_KEY);
-  if(!raw){
-    const base = { students: {}, attendance: {}, notes: {} };
-    localStorage.setItem(APP_KEY, JSON.stringify(base));
-    return base;
-  }
-  return JSON.parse(raw);
-}
-function saveStore(data){ localStorage.setItem(APP_KEY, JSON.stringify(data)); }
-
-let store = loadStore();
-
-/* Mostrar grados */
-const gradesList = document.getElementById("grades-list");
-function renderGrades(){
-  gradesList.innerHTML = "";
-  GRADOS.forEach(grado => {
-    const div = document.createElement("div");
-    div.className = "grade-card";
-    div.innerHTML = `
-      <h4>${grado}</h4>
-      <p class="muted small">${(store.students[grado] || []).length} estudiante(s)</p>
-      <div class="row">
-        <button class="btn small" onclick="goTo('asistencia.html','${grado}')">Asistencia</button>
-        <button class="btn small outline" onclick="goTo('notas.html','${grado}')">Notas</button>
-      </div>
-    `;
-    gradesList.appendChild(div);
-  });
-}
-renderGrades();
-
-/* Llenar selector */
-const sel = document.getElementById("select-grade");
-GRADOS.forEach(g=>{
-  const opt = document.createElement("option");
-  opt.value = g; opt.textContent = g;
-  sel.appendChild(opt);
-});
-
-/* Agregar estudiante */
-document.getElementById("btn-add-student").addEventListener("click", ()=>{
-  const grade = sel.value;
-  const name = document.getElementById("new-student").value.trim();
-  if(!name) return alert("Ingrese el nombre del estudiante.");
-  if(!store.students[grade]) store.students[grade] = [];
-  store.students[grade].push({ id: `${grade}-${Date.now()}`, name });
-  saveStore(store);
-  document.getElementById("new-student").value = "";
-  renderGrades();
-});
-
-/* Navegar con el grado */
-function goTo(page, grade){
-  sessionStorage.setItem("currentGrade", grade);
-  window.location.href = page;
-}
-
-/* Logout */
-document.getElementById("btn-logout").addEventListener("click", ()=>{
-  sessionStorage.removeItem("logged");
-  window.location.href = "index.html";
+// Initialize dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.location.pathname.includes('dashboard.html')) {
+        window.dashboardManager = new DashboardManager();
+    }
 });

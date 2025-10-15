@@ -1,28 +1,55 @@
-// Gestiona todo el sistema de asistencia
+// Gestiona todo el sistema de asistencia - CONECTADO A FIREBASE
 class AttendanceManager {
-    constructor(dashboardManager) {
-        this.dashboard = dashboardManager;
+    constructor() {
         this.db = firebase.firestore();
-        this.currentUser = dashboardManager.currentUser;
+        this.auth = firebase.auth();
+        this.currentUser = null;
         this.selectedDate = new Date().toISOString().split('T')[0];
         this.selectedGrade = '';
         this.attendanceData = {};
+        this.students = [];
+
         this.init();
     }
 
-    init() {
-        this.setupEventListeners();
-        this.loadGrades(); // Cargar grados disponibles
+    async init() {
+        try {
+            // Esperar a que el usuario esté autenticado
+            this.currentUser = await this.getCurrentUser();
+
+            if (!this.currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            console.log('Usuario autenticado:', this.currentUser.uid);
+            await this.setupEventListeners();
+            await this.loadGrades();
+
+        } catch (error) {
+            console.error('Error en init:', error);
+        }
     }
 
-    setupEventListeners() {
+    getCurrentUser() {
+        return new Promise((resolve) => {
+            const unsubscribe = this.auth.onAuthStateChanged((user) => {
+                unsubscribe();
+                resolve(user);
+            });
+        });
+    }
+
+    async setupEventListeners() {
         // Selector de fecha
         const datePicker = document.getElementById('attendance-date');
         if (datePicker) {
             datePicker.value = this.selectedDate;
             datePicker.addEventListener('change', (e) => {
                 this.selectedDate = e.target.value;
-                this.loadAttendanceData();
+                if (this.selectedGrade) {
+                    this.loadAttendanceData();
+                }
             });
         }
 
@@ -31,22 +58,15 @@ class AttendanceManager {
         if (gradeSelect) {
             gradeSelect.addEventListener('change', (e) => {
                 this.selectedGrade = e.target.value;
-                this.loadStudentsForAttendance();
+                if (this.selectedGrade) {
+                    this.loadStudentsForAttendance();
+                } else {
+                    this.showNoDataMessage();
+                }
             });
         }
 
-        // Botones de acción
-        const saveBtn = document.getElementById('save-attendance');
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => this.saveAttendance());
-        }
-
-        const quickActions = document.querySelectorAll('.quick-action');
-        quickActions.forEach(btn => {
-            btn.addEventListener('click', (e) => this.handleQuickAction(e));
-        });
-
-        // Búsqueda de estudiantes
+        // Búsqueda
         const searchInput = document.getElementById('student-search');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => this.filterStudents(e.target.value));
@@ -55,67 +75,117 @@ class AttendanceManager {
 
     async loadGrades() {
         try {
+            console.log('Cargando grados... Usuario:', this.currentUser.uid);
+
             const gradesSnapshot = await this.db.collection('estudiantes')
                 .where('profesorId', '==', this.currentUser.uid)
                 .get();
 
             const grades = new Set();
             gradesSnapshot.forEach(doc => {
-                grades.add(doc.data().grado);
+                const studentData = doc.data();
+                if (studentData.grado) {
+                    grades.add(studentData.grado);
+                }
             });
 
+            console.log('Grados encontrados:', Array.from(grades));
             this.populateGradeSelect(Array.from(grades));
-            
+
         } catch (error) {
             console.error('Error cargando grados:', error);
+            this.showError('Error al cargar los grados: ' + error.message);
         }
     }
 
     populateGradeSelect(grades) {
         const gradeSelect = document.getElementById('attendance-grade');
-        if (!gradeSelect) return;
+        if (!gradeSelect) {
+            console.error('No se encontró el elemento attendance-grade');
+            return;
+        }
 
         gradeSelect.innerHTML = '<option value="">Seleccionar grado</option>';
-        
-        grades.sort().forEach(grade => {
+
+        const sortedGrades = this.sortGrades(grades);
+
+        sortedGrades.forEach(grade => {
             const option = document.createElement('option');
             option.value = grade;
-            option.textContent = this.dashboard.getGradeDisplayName(grade);
+            option.textContent = this.getGradeDisplayName(grade);
             gradeSelect.appendChild(option);
+        });
+
+        console.log('Select de grados poblado con:', sortedGrades.length, 'grados');
+    }
+
+    sortGrades(grades) {
+        const gradeOrder = {
+            'kinder4': 1, 'kinder5': 2, 'kinder6': 3,
+            'primero': 4, 'segundo': 5, 'tercero': 6,
+            'cuarto': 7, 'quinto': 8, 'sexto': 9,
+            'septimo': 10, 'octavo': 11, 'noveno': 12,
+            'primero-bach': 13, 'segundo-bach': 14
+        };
+
+        return grades.sort((a, b) => {
+            return (gradeOrder[a] || 99) - (gradeOrder[b] || 99);
         });
     }
 
     async loadStudentsForAttendance() {
-        if (!this.selectedGrade) return;
+    if (!this.selectedGrade) return;
 
-        try {
-            const studentsSnapshot = await this.db.collection('estudiantes')
-                .where('profesorId', '==', this.currentUser.uid)
-                .where('grado', '==', this.selectedGrade)
-                .orderBy('nombre')
-                .get();
+    try {
+        console.log('🔍 Cargando estudiantes para grado:', this.selectedGrade);
 
-            this.students = [];
-            studentsSnapshot.forEach(doc => {
-                this.students.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
-            });
+        this.showLoading('Cargando estudiantes...');
 
-            // Cargar asistencia existente para esta fecha y grado
-            await this.loadAttendanceData();
-            this.renderAttendanceTable();
+        const studentsSnapshot = await this.db.collection('estudiantes')
+            .where('profesorId', '==', this.currentUser.uid)
+            .where('grado', '==', this.selectedGrade)
+            .get();
+
+        console.log('📊 Resultado de la consulta:', studentsSnapshot.size, 'estudiantes encontrados');
+
+        this.students = [];
+        studentsSnapshot.forEach(doc => {
+            const studentData = doc.data();
+            console.log('👤 Estudiante RAW:', doc.id, studentData);
             
-        } catch (error) {
-            console.error('Error cargando estudiantes:', error);
+            // ⭐⭐ CORRECCIÓN: Usar nombreCompleto (con L) ⭐⭐
+            this.students.push({
+                id: doc.id,
+                nombre: studentData.nombreCompleto || 'Estudiante sin nombre',
+                identificacion: studentData.identificacion || 'Sin identificación',
+                grado: studentData.grado,
+                activo: studentData.estado === 'activo'
+            });
+        });
+
+        console.log('✅ Estudiantes procesados:', this.students);
+
+        if (this.students.length === 0) {
+            console.warn('⚠️ No se encontraron estudiantes para este grado');
+            this.showNoDataMessage();
+            return;
         }
+
+        await this.loadAttendanceData();
+        this.renderAttendanceTable();
+
+    } catch (error) {
+        console.error('❌ Error cargando estudiantes:', error);
+        this.showError('Error al cargar estudiantes: ' + error.message);
     }
+}
 
     async loadAttendanceData() {
         if (!this.selectedGrade) return;
 
         try {
+            console.log('Cargando asistencia para:', this.selectedGrade, this.selectedDate);
+
             const attendanceSnapshot = await this.db.collection('asistencias')
                 .where('profesorId', '==', this.currentUser.uid)
                 .where('clase', '==', this.selectedGrade)
@@ -123,18 +193,32 @@ class AttendanceManager {
                 .get();
 
             this.attendanceData = {};
-            
+
             if (!attendanceSnapshot.empty) {
+                console.log('Asistencia existente encontrada');
                 attendanceSnapshot.forEach(doc => {
                     const data = doc.data();
-                    data.estudiantes.forEach(student => {
-                        this.attendanceData[student.id] = student.estado;
-                    });
+                    this.attendanceDocId = doc.id;
+                    if (data.estudiantes) {
+                        data.estudiantes.forEach(student => {
+                            this.attendanceData[student.id] = student.estado || 'ausente';
+                        });
+                    }
+                });
+            } else {
+                console.log('No hay asistencia registrada para esta fecha');
+                // Inicializar todos como 'pendiente'
+                this.students.forEach(student => {
+                    this.attendanceData[student.id] = 'pendiente';
                 });
             }
-            
+
         } catch (error) {
-            console.error('Error cargando datos de asistencia:', error);
+            console.error('Error cargando asistencia:', error);
+            // En caso de error, inicializar todos como pendiente
+            this.students.forEach(student => {
+                this.attendanceData[student.id] = 'pendiente';
+            });
         }
     }
 
@@ -142,48 +226,60 @@ class AttendanceManager {
         const container = document.getElementById('attendance-container');
         if (!container) return;
 
-        if (this.students.length === 0) {
-            container.innerHTML = '<p class="no-students">No hay estudiantes en este grado.</p>';
+        console.log('🎨 Renderizando tabla con:', this.students.length, 'estudiantes');
+
+        if (!this.students || this.students.length === 0) {
+            container.innerHTML = `
+                <div class="no-data">
+                    <div>📝</div>
+                    <h3>No hay estudiantes en este grado</h3>
+                    <p>No se encontraron estudiantes para ${this.getGradeDisplayName(this.selectedGrade)}</p>
+                    <button class="btn btn-primary" onclick="attendanceManager.loadStudentsForAttendance()">
+                        Reintentar
+                    </button>
+                </div>
+            `;
             return;
         }
 
         let html = `
-            <div class="attendance-header">
-                <h3>Asistencia - ${this.dashboard.getGradeDisplayName(this.selectedGrade)}</h3>
-                <div class="attendance-actions">
-                    <button class="btn btn-primary quick-action" data-action="all-present">
-                        Todos Presente
-                    </button>
-                    <button class="btn btn-secondary quick-action" data-action="all-absent">
-                        Todos Ausente
-                    </button>
-                    <button class="btn btn-warning quick-action" data-action="all-late">
-                        Todos Tarde
-                    </button>
+            <div class="attendance-container">
+                <div class="attendance-header">
+                    <h3>📋 Lista de Asistencia - ${this.getGradeDisplayName(this.selectedGrade)}</h3>
+                    <div class="quick-actions">
+                        <button class="btn btn-success quick-action" data-action="all-present">
+                            ✅ Todos Presente
+                        </button>
+                        <button class="btn btn-danger quick-action" data-action="all-absent">
+                            ❌ Todos Ausente
+                        </button>
+                        <button class="btn btn-warning quick-action" data-action="all-late">
+                            ⏰ Todos Tarde
+                        </button>
+                    </div>
                 </div>
-            </div>
-            <div class="attendance-table-container">
-                <table class="attendance-table">
-                    <thead>
-                        <tr>
-                            <th>Estudiante</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <div class="attendance-table-container">
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th width="40%">Estudiante</th>
+                                <th width="20%">Estado</th>
+                                <th width="40%">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
         `;
 
-        this.students.forEach(student => {
+        this.students.forEach((student) => {
             const currentStatus = this.attendanceData[student.id] || 'pendiente';
             const statusClass = this.getStatusClass(currentStatus);
-            
+
             html += `
                 <tr class="student-row" data-student-id="${student.id}">
                     <td>
                         <div class="student-info">
                             <span class="student-name">${student.nombre}</span>
-                            <span class="student-id">${student.identificacion || ''}</span>
+                            <span class="student-id">${student.identificacion || 'Sin identificación'}</span>
                         </div>
                     </td>
                     <td>
@@ -192,18 +288,15 @@ class AttendanceManager {
                         </span>
                     </td>
                     <td>
-                        <div class="attendance-actions">
+                        <div class="action-buttons">
                             <button class="btn-status btn-present" data-status="presente" data-student="${student.id}">
-                                Presente
+                                ✅ Presente
                             </button>
                             <button class="btn-status btn-absent" data-status="ausente" data-student="${student.id}">
-                                Ausente
+                                ❌ Ausente
                             </button>
                             <button class="btn-status btn-late" data-status="tarde" data-student="${student.id}">
-                                Tarde
-                            </button>
-                            <button class="btn-status btn-justified" data-status="justificado" data-student="${student.id}">
-                                Justificado
+                                ⏰ Tarde
                             </button>
                         </div>
                     </td>
@@ -212,26 +305,28 @@ class AttendanceManager {
         });
 
         html += `
-                    </tbody>
-                </table>
-            </div>
-            <div class="attendance-footer">
-                <button id="save-attendance" class="btn btn-success">
-                    💾 Guardar Asistencia
-                </button>
-                <span class="attendance-summary" id="attendance-summary"></span>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="attendance-footer">
+                    <button id="save-attendance" class="btn btn-primary">
+                        💾 Guardar Asistencia
+                    </button>
+                    <div class="summary" id="attendance-summary">
+                        ${this.getSummaryText()}
+                    </div>
+                </div>
             </div>
         `;
 
         container.innerHTML = html;
-        this.attachStudentEventListeners();
+        this.attachEventListeners();
         this.updateSummary();
     }
 
-    attachStudentEventListeners() {
-        // Botones de estado individual
-        const statusButtons = document.querySelectorAll('.btn-status');
-        statusButtons.forEach(btn => {
+    attachEventListeners() {
+        // Botones de estado
+        document.querySelectorAll('.btn-status').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const studentId = e.target.dataset.student;
                 const status = e.target.dataset.status;
@@ -239,13 +334,24 @@ class AttendanceManager {
             });
         });
 
-        // Botones de acción rápida (ya están configurados en setupEventListeners)
+        // Acciones rápidas
+        document.querySelectorAll('.quick-action').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const action = e.target.dataset.action;
+                this.handleQuickAction(action);
+            });
+        });
+
+        // Guardar
+        const saveBtn = document.getElementById('save-attendance');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.saveAttendance());
+        }
     }
 
     setStudentStatus(studentId, status) {
         this.attendanceData[studentId] = status;
         
-        // Actualizar UI
         const statusElement = document.getElementById(`status-${studentId}`);
         if (statusElement) {
             statusElement.textContent = this.getStatusDisplayName(status);
@@ -255,13 +361,11 @@ class AttendanceManager {
         this.updateSummary();
     }
 
-    handleQuickAction(e) {
-        const action = e.target.dataset.action;
+    handleQuickAction(action) {
         const statusMap = {
             'all-present': 'presente',
             'all-absent': 'ausente', 
-            'all-late': 'tarde',
-            'all-justified': 'justificado'
+            'all-late': 'tarde'
         };
 
         const status = statusMap[action];
@@ -269,63 +373,54 @@ class AttendanceManager {
             this.students.forEach(student => {
                 this.attendanceData[student.id] = status;
             });
-            this.renderAttendanceTable(); // Re-render para actualizar todo
+            this.renderAttendanceTable();
         }
     }
 
     async saveAttendance() {
-        if (!this.selectedGrade || !this.students) {
-            alert('Por favor selecciona un grado primero.');
+        if (!this.selectedGrade || !this.students || this.students.length === 0) {
+            this.showError('No hay estudiantes para guardar.');
             return;
         }
 
         try {
+            console.log('Guardando asistencia...');
+
+            const studentsAttendance = this.students.map(student => ({
+                id: student.id,
+                nombre: student.nombre,
+                estado: this.attendanceData[student.id] || 'ausente'
+            }));
+
             const attendanceRecord = {
                 profesorId: this.currentUser.uid,
                 clase: this.selectedGrade,
                 fecha: this.selectedDate,
-                estudiantes: this.students.map(student => ({
-                    id: student.id,
-                    nombre: student.nombre,
-                    estado: this.attendanceData[student.id] || 'ausente'
-                })),
+                estudiantes: studentsAttendance,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                totalEstudiantes: this.students.length,
+                totalEstudiantes: studentsAttendance.length,
                 presentes: this.getCountByStatus('presente'),
                 ausentes: this.getCountByStatus('ausente'),
-                tardes: this.getCountByStatus('tarde'),
-                justificados: this.getCountByStatus('justificado')
+                tardes: this.getCountByStatus('tarde')
             };
 
-            // Buscar si ya existe un registro para esta fecha y grado
-            const existingQuery = await this.db.collection('asistencias')
-                .where('profesorId', '==', this.currentUser.uid)
-                .where('clase', '==', this.selectedGrade)
-                .where('fecha', '==', this.selectedDate)
-                .get();
-
             let savePromise;
-            if (!existingQuery.empty) {
-                // Actualizar registro existente
-                const docId = existingQuery.docs[0].id;
-                savePromise = this.db.collection('asistencias').doc(docId).update(attendanceRecord);
+            
+            if (this.attendanceDocId) {
+                savePromise = this.db.collection('asistencias').doc(this.attendanceDocId).update(attendanceRecord);
+                console.log('Actualizando asistencia existente');
             } else {
-                // Crear nuevo registro
                 savePromise = this.db.collection('asistencias').add(attendanceRecord);
+                console.log('Creando nueva asistencia');
             }
 
             await savePromise;
-            
-            // Mostrar confirmación
-            this.showSuccessMessage('Asistencia guardada correctamente');
-            
-            // Actualizar dashboard
-            this.dashboard.loadAttendanceStats();
-            this.dashboard.loadRecentActivity();
+            this.showSuccess('✅ Asistencia guardada correctamente');
+            await this.loadAttendanceData();
             
         } catch (error) {
             console.error('Error guardando asistencia:', error);
-            this.showErrorMessage('Error al guardar la asistencia: ' + error.message);
+            this.showError('❌ Error al guardar: ' + error.message);
         }
     }
 
@@ -335,18 +430,18 @@ class AttendanceManager {
 
     updateSummary() {
         const summaryElement = document.getElementById('attendance-summary');
-        if (!summaryElement) return;
+        if (summaryElement) {
+            summaryElement.innerHTML = this.getSummaryText();
+        }
+    }
 
+    getSummaryText() {
         const total = this.students.length;
         const present = this.getCountByStatus('presente');
         const absent = this.getCountByStatus('ausente');
         const late = this.getCountByStatus('tarde');
-        const justified = this.getCountByStatus('justificado');
 
-        summaryElement.innerHTML = `
-            <strong>Resumen:</strong> 
-            ✅ ${present} | ❌ ${absent} | ⏰ ${late} | 📝 ${justified} | Total: ${total}
-        `;
+        return `Resumen: ✅ ${present} Presente | ❌ ${absent} Ausente | ⏰ ${late} Tarde | Total: ${total}`;
     }
 
     filterStudents(searchTerm) {
@@ -365,12 +460,22 @@ class AttendanceManager {
         });
     }
 
+    getGradeDisplayName(grade) {
+        const gradesMap = {
+            'kinder4': 'Kinder 4', 'kinder5': 'Kinder 5', 'kinder6': 'Kinder 6',
+            'primero': '1° Grado', 'segundo': '2° Grado', 'tercero': '3° Grado',
+            'cuarto': '4° Grado', 'quinto': '5° Grado', 'sexto': '6° Grado',
+            'septimo': '7° Grado', 'octavo': '8° Grado', 'noveno': '9° Grado',
+            'primero-bach': '1° Bachillerato', 'segundo-bach': '2° Bachillerato'
+        };
+        return gradesMap[grade] || grade;
+    }
+
     getStatusClass(status) {
         const classes = {
             'presente': 'status-present',
             'ausente': 'status-absent', 
             'tarde': 'status-late',
-            'justificado': 'status-justified',
             'pendiente': 'status-pending'
         };
         return classes[status] || 'status-pending';
@@ -380,19 +485,117 @@ class AttendanceManager {
         const names = {
             'presente': 'Presente',
             'ausente': 'Ausente',
-            'tarde': 'Llegó Tarde', 
-            'justificado': 'Justificado',
+            'tarde': 'Tarde', 
             'pendiente': 'Pendiente'
         };
         return names[status] || status;
     }
 
-    showSuccessMessage(message) {
-        // Implementar notificación de éxito
-        alert(message); // Puedes reemplazar con un sistema de notificaciones bonito
+    // MÉTODOS DE UI
+    showLoading(message) {
+        const container = document.getElementById('attendance-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="no-data">
+                    <div>⏳</div>
+                    <h3>${message}</h3>
+                </div>
+            `;
+        }
     }
 
-    showErrorMessage(message) {
-        alert(message); // Puedes reemplazar con un sistema de notificaciones bonito
+    showNoDataMessage() {
+        const container = document.getElementById('attendance-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="no-data">
+                    <div>📚</div>
+                    <h3>Selecciona un grado para comenzar</h3>
+                    <p>Elige una fecha y grado para ver la lista de estudiantes</p>
+                </div>
+            `;
+        }
     }
+
+    // MÉTODOS DE NOTIFICACIÓN
+    showSuccess(message = 'Asistencia guardada correctamente') {
+        this.showModal('¡Éxito!', message, 'success');
+    }
+
+    showError(message) {
+        this.showNotification(message, 'error');
+    }
+
+    showNotification(message, type = 'success') {
+        const container = document.getElementById('notification-container');
+        if (!container) return;
+
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <span class="notification-icon">${type === 'success' ? '✅' : '❌'}</span>
+            <span>${message}</span>
+            <button class="notification-close" onclick="this.parentElement.remove()">×</button>
+        `;
+
+        container.appendChild(notification);
+
+        // Animar entrada
+        setTimeout(() => notification.classList.add('show'), 100);
+
+        // Auto-remover después de 5 segundos
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 5000);
+    }
+
+    showModal(title, message, type = 'success') {
+        const modal = document.getElementById('success-modal');
+        if (!modal) {
+            console.error('Modal no encontrado');
+            return;
+        }
+
+        const modalTitle = modal.querySelector('.modal-title');
+        const modalMessage = modal.querySelector('.modal-message');
+        const modalIcon = modal.querySelector('.modal-icon');
+
+        // Configurar según el tipo
+        const config = {
+            success: { icon: '✅', color: '#27ae60' },
+            error: { icon: '❌', color: '#e74c3c' },
+            warning: { icon: '⚠️', color: '#f39c12' }
+        }[type] || { icon: '✅', color: '#27ae60' };
+
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        modalIcon.textContent = config.icon;
+        modalIcon.style.color = config.color;
+
+        modal.classList.add('show');
+    }
+
 }
+
+// FUNCIÓN GLOBAL PARA CERRAR MODAL
+window.hideModal = function() {
+    const modal = document.getElementById('success-modal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+};
+
+// Cerrar modal al hacer clic fuera
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('success-modal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                window.hideModal();
+            }
+        });
+    }
+});

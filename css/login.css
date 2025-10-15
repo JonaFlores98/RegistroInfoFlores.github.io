@@ -70,3 +70,26 @@
 .login-footer a:hover {
     color: var(--primary);
 }
+
+/* Estilos para los botones en fila */
+.buttons-row {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.buttons-row .btn {
+    flex: 1;
+    text-align: center;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Asegurar que los botones se apilen en móviles */
+@media (max-width: 480px) {
+    .buttons-row {
+        flex-direction: column;
+    }
+}

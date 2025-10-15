@@ -23,12 +23,11 @@
                     <label for="password">Contraseña</label>
                     <input type="password" id="password" class="form-control" placeholder="Ingresa tu contraseña" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
                 
-                <div style="margin-top: 1rem; text-align: center;">
-                    <a href="create-user.html" class="btn btn-secondary" style="display: inline-block; width: auto; padding: 0.5rem 1rem;">
-                        Crear Usuario
-                    </a>
+                <!-- Botones uno al lado del otro -->
+                <div class="buttons-row">
+                    <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                    <a href="create-user.html" class="btn btn-secondary">Crear Usuario</a>
                 </div>
             </form>
             <div class="login-footer">
@@ -58,7 +57,7 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // SOLO esta función - ELIMINA todo lo demás
+        // Lógica de login simple
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -93,8 +92,6 @@
                 button.disabled = false;
             }
         });
-
-        // NO AGREGUES NADA MÁS AQUÍ
     </script>
 </body>
 </html>

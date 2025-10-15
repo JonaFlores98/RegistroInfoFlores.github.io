@@ -1,56 +1,374 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Crear Usuario - Sistema Docente</title>
+    <title>Registro - Sistema Docente</title>
     <link rel="stylesheet" href="css/login.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .login-box {
+            max-width: 700px !important;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-section h3 {
+            color: #4361ee;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            border-bottom: 2px solid #4361ee;
+            padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 0;
+        }
+        
+        .form-full {
+            grid-column: 1 / -1;
+        }
+        
+        .grades-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .grade-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .grade-option:hover {
+            border-color: #4361ee;
+            background: #f8f9ff;
+        }
+        
+        .grade-option.selected {
+            border-color: #4361ee;
+            background: #4361ee;
+            color: white;
+        }
+        
+        .grade-option input[type="checkbox"] {
+            display: none;
+        }
+        
+        .password-feedback {
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .valid {
+            color: #28a745;
+        }
+        
+        .invalid {
+            color: #dc3545;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            border: 1px solid #f5c6cb;
+            display: none;
+            font-size: 0.9rem;
+        }
+        
+        .section-description {
+            color: #666;
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        
+        /* Scroll personalizado */
+        .login-box::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .login-box::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .login-box::-webkit-scrollbar-thumb {
+            background: #4361ee;
+            border-radius: 3px;
+        }
+        
+        .login-box::-webkit-scrollbar-thumb:hover {
+            background: #3a56d4;
+        }
+        
+        @media (max-width: 768px) {
+            .login-box {
+                max-width: 95% !important;
+                margin: 1rem;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .grades-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .grades-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-section {
+                padding: 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="login-container">
         <div class="login-box">
             <div class="login-header">
-                <h1>Crear Usuario</h1>
-                <p>Primer usuario del sistema</p>
+                <h1><i class="fas fa-user-plus"></i> Registro de Docente</h1>
+                <p>Complete su información para crear la cuenta</p>
             </div>
+            
+            <div id="form-error" class="error-message"></div>
+            
             <form id="create-user-form">
-                <div class="form-group">
-                    <label for="name">Nombre completo</label>
-                    <input type="text" id="name" class="form-control" placeholder="Juan Docente" required>
+                <!-- Información Personal -->
+                <div class="form-section">
+                    <h3><i class="fas fa-user-circle"></i> Información Personal</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nombre-completo">Nombre Completo *</label>
+                            <input type="text" id="nombre-completo" class="form-control" placeholder="Juan Carlos Pérez García" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nombre-usuario">Usuario *</label>
+                            <input type="text" id="nombre-usuario" class="form-control" placeholder="juan.docente" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Correo Electrónico *</label>
+                        <input type="email" id="email" class="form-control" placeholder="tu-email@colegio.com" required>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" class="form-control" placeholder="tu-email@colegio.com" required>
+
+                <!-- Seguridad -->
+                <div class="form-section">
+                    <h3><i class="fas fa-shield-alt"></i> Seguridad</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="password">Contraseña *</label>
+                            <input type="password" id="password" class="form-control" placeholder="Mínimo 6 caracteres" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-password">Confirmar *</label>
+                            <input type="password" id="confirm-password" class="form-control" placeholder="Repetir contraseña" required>
+                            <div id="password-match" class="password-feedback">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Las contraseñas deben coincidir</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="password">Contraseña</label>
-                    <input type="password" id="password" class="form-control" placeholder="Mínimo 6 caracteres" required minlength="6">
+
+                <!-- Grados a Administrar -->
+                <div class="form-section">
+                    <h3><i class="fas fa-graduation-cap"></i> Grados a Administrar</h3>
+                    <p class="section-description">
+                        Seleccione los grados que impartirá (mínimo 1 requerido)
+                    </p>
+                    <div class="grades-container">
+                        <label class="grade-option">
+                            <input type="checkbox" name="grades" value="parvularia">
+                            <i class="fas fa-child"></i>
+                            <span>Parvularia</span>
+                        </label>
+                        <label class="grade-option">
+                            <input type="checkbox" name="grades" value="segundo">
+                            <i class="fas fa-user-graduate"></i>
+                            <span>2° Grado</span>
+                        </label>
+                        <label class="grade-option">
+                            <input type="checkbox" name="grades" value="tercero">
+                            <i class="fas fa-user-graduate"></i>
+                            <span>3° Grado</span>
+                        </label>
+                        <label class="grade-option">
+                            <input type="checkbox" name="grades" value="cuarto">
+                            <i class="fas fa-user-graduate"></i>
+                            <span>4° Grado</span>
+                        </label>
+                        <label class="grade-option">
+                            <input type="checkbox" name="grades" value="quinto">
+                            <i class="fas fa-user-graduate"></i>
+                            <span>5° Grado</span>
+                        </label>
+                        <label class="grade-option">
+                            <input type="checkbox" name="grades" value="sexto">
+                            <i class="fas fa-user-graduate"></i>
+                            <span>6° Grado</span>
+                        </label>
+                        <label class="grade-option">
+                            <input type="checkbox" name="grades" value="septimo">
+                            <i class="fas fa-user-graduate"></i>
+                            <span>7° Grado</span>
+                        </label>
+                        <label class="grade-option">
+                            <input type="checkbox" name="grades" value="octavo">
+                            <i class="fas fa-user-graduate"></i>
+                            <span>8° Grado</span>
+                        </label>
+                        <label class="grade-option">
+                            <input type="checkbox" name="grades" value="noveno">
+                            <i class="fas fa-user-graduate"></i>
+                            <span>9° Grado</span>
+                        </label>
+                        <label class="grade-option">
+                            <input type="checkbox" name="grades" value="primero-bach">
+                            <i class="fas fa-user-tie"></i>
+                            <span>1° Bachillerato</span>
+                        </label>
+                        <label class="grade-option">
+                            <input type="checkbox" name="grades" value="segundo-bach">
+                            <i class="fas fa-user-tie"></i>
+                            <span>2° Bachillerato</span>
+                        </label>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Crear Usuario</button>
+
+                <button type="submit" class="btn btn-primary" id="submit-btn" style="margin-top: 0.5rem; width: 100%;">
+                    <i class="fas fa-user-plus"></i> Crear Cuenta de Docente
+                </button>
             </form>
-            <div class="login-footer">
-                <a href="login.html">← Volver al login</a>
+            
+            <div class="login-footer" style="margin-top: 1.5rem;">
+                <a href="login.html"><i class="fas fa-arrow-left"></i> Volver al inicio de sesión</a>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <script src="js/firebase-config-compat.js"></script>
-    
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmqWjpS2bYaNtPA_LhYLMh5KuwOOmEk2Y",
+            authDomain: "sistema-docente-informatica.firebaseapp.com",
+            projectId: "sistema-docente-informatica",
+            storageBucket: "sistema-docente-informatica.firebasestorage.app",
+            messagingSenderId: "317682841841",
+            appId: "1:317682841841:web:e0022e870491b701365150"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Interacción visual para los grados
+        document.querySelectorAll('.grade-option').forEach(option => {
+            const checkbox = option.querySelector('input[type="checkbox"]');
+            
+            option.addEventListener('click', () => {
+                checkbox.checked = !checkbox.checked;
+                option.classList.toggle('selected', checkbox.checked);
+            });
+        });
+
+        // Validación de contraseñas en tiempo real
+        function validatePasswords() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const feedback = document.getElementById('password-match');
+            
+            if (confirmPassword === '') {
+                feedback.innerHTML = '<i class="fas fa-info-circle"></i><span>Las contraseñas deben coincidir</span>';
+                feedback.className = 'password-feedback';
+                return;
+            }
+            
+            if (password === confirmPassword) {
+                feedback.innerHTML = '<i class="fas fa-check-circle"></i><span>Las contraseñas coinciden</span>';
+                feedback.className = 'password-feedback valid';
+            } else {
+                feedback.innerHTML = '<i class="fas fa-times-circle"></i><span>Las contraseñas no coinciden</span>';
+                feedback.className = 'password-feedback invalid';
+            }
+        }
+
+        document.getElementById('password').addEventListener('input', validatePasswords);
+        document.getElementById('confirm-password').addEventListener('input', validatePasswords);
+
+        // Envío del formulario
         document.getElementById('create-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const name = document.getElementById('name').value;
+            // Obtener datos
+            const nombreCompleto = document.getElementById('nombre-completo').value;
+            const nombreUsuario = document.getElementById('nombre-usuario').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const button = e.target.querySelector('button');
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            // Obtener grados seleccionados
+            const selectedGrades = [];
+            document.querySelectorAll('input[name="grades"]:checked').forEach(checkbox => {
+                selectedGrades.push(checkbox.value);
+            });
+            
+            const button = document.getElementById('submit-btn');
+            const errorDiv = document.getElementById('form-error');
+            
+            // Validaciones
+            let hasError = false;
+            errorDiv.style.display = 'none';
+            
+            if (password !== confirmPassword) {
+                showError('Las contraseñas no coinciden');
+                hasError = true;
+            }
+            
+            if (selectedGrades.length === 0) {
+                showError('Debe seleccionar al menos un grado a administrar');
+                hasError = true;
+            }
+            
+            if (hasError) return;
             
             try {
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando cuenta...';
                 button.disabled = true;
                 
                 // Crear usuario en Authentication
@@ -59,22 +377,39 @@
                 
                 // Guardar datos en Firestore
                 await db.collection('users').doc(user.uid).set({
-                    name: name,
+                    nombreCompleto: nombreCompleto,
+                    nombreUsuario: nombreUsuario,
                     email: email,
+                    grades: selectedGrades,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     role: 'teacher',
-                    grades: ['parvularia', 'segundo', 'tercero', 'cuarto', 'quinto', 'sexto', 'septimo', 'octavo', 'noveno', 'primero-bach', 'segundo-bach']
+                    displayName: nombreCompleto
                 });
                 
-                alert('¡Usuario creado exitosamente! Ahora puedes iniciar sesión');
+                alert('¡Cuenta creada exitosamente! 🎉\nAhora puede iniciar sesión con sus credenciales.');
                 window.location.href = 'login.html';
                 
             } catch (error) {
-                alert('Error: ' + error.message);
-                button.innerHTML = 'Crear Usuario';
+                if (error.code === 'auth/email-already-in-use') {
+                    showError('Este correo electrónico ya está registrado. Use otro correo o inicie sesión.');
+                } else if (error.code === 'auth/weak-password') {
+                    showError('La contraseña es demasiado débil. Use al menos 6 caracteres.');
+                } else {
+                    showError('Error: ' + error.message);
+                }
+                button.innerHTML = '<i class="fas fa-user-plus"></i> Crear Cuenta de Docente';
                 button.disabled = false;
             }
         });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('form-error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            // Scroll to error
+            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     </script>
 </body>
 </html>

@@ -107,48 +107,47 @@ class StudentsManager {
 
     async loadStudents() {
         try {
-            // Primero intentamos con el ordenamiento
-            let studentsSnapshot;
-            try {
-                studentsSnapshot = await this.db.collection('estudiantes')
-                    .where('profesorId', '==', this.currentUser.uid)
-                    .orderBy('nombreCompleto')
-                    .get();
-            } catch (indexError) {
-                // Si falla por índice, cargamos sin ordenar
-                console.log('Cargando estudiantes sin ordenamiento...');
-                studentsSnapshot = await this.db.collection('estudiantes')
-                    .where('profesorId', '==', this.currentUser.uid)
-                    .get();
-            }
+            console.log('Cargando estudiantes...');
+
+            // CONSULTA SIMPLIFICADA - solo filtrar por profesor, sin ordenar
+            const studentsSnapshot = await this.db.collection('estudiantes')
+                .where('profesorId', '==', this.currentUser.uid)
+                .get();
 
             this.students = [];
             studentsSnapshot.forEach(doc => {
+                console.log('Estudiante encontrado:', doc.data().nombreCompleto);
                 this.students.push({
                     id: doc.id,
                     ...doc.data()
                 });
             });
 
-            // Ordenar localmente si no se pudo ordenar en la consulta
-            this.students.sort((a, b) => a.nombreCompleto?.localeCompare(b.nombreCompleto || ''));
+            console.log(`Total estudiantes cargados: ${this.students.length}`);
+
+            // ORDENAR LOCALMENTE - esto no requiere índice
+            this.students.sort((a, b) => {
+                const nameA = a.nombreCompleto || '';
+                const nameB = b.nombreCompleto || '';
+                return nameA.localeCompare(nameB);
+            });
 
             this.filteredStudents = [...this.students];
-            this.renderStudents();
+            this.renderStudents();  
             this.updateStudentsCount();
 
         } catch (error) {
-            console.error('Error cargando estudiantes:', error);
-            // Mostrar mensaje más amigable
-            if (error.code === 'failed-precondition') {
-                console.log('Esperando que se cree el índice de Firestore...');
-                // No mostrar alerta molesta, solo cargar datos básicos
-                this.students = [];
-                this.filteredStudents = [];
-                this.renderStudents();
-                this.updateStudentsCount();
-            } else {
-                alert('Error al cargar los estudiantes: ' + error.message);
+            console.error('Error crítico cargando estudiantes:', error);
+
+            // Si hay un error grave, mostrar estado vacío pero no alerta
+            this.students = [];
+            this.filteredStudents = [];
+            this.renderStudents();
+            this.updateStudentsCount();
+
+            // Solo mostrar alerta si no es error de índice
+            if (!error.message.includes('index') && !error.code === 'failed-precondition') {
+                alert('Error al cargar estudiantes: ' + error.message);
             }
         }
     }

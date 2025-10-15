@@ -1,20 +1,72 @@
 // Dashboard functionality
 class DashboardManager {
     constructor() {
+        this.auth = firebase.auth();
+        this.db = firebase.firestore();
         this.init();
     }
 
     init() {
-        this.loadDashboardData();
+        this.setupAuthListener();
         this.addEventListeners();
     }
 
+    setupAuthListener() {
+        // Protección del dashboard - solo redirige si NO hay usuario
+        this.auth.onAuthStateChanged((user) => {
+            if (!user) {
+                // Si no hay usuario, redirigir al login
+                window.location.href = 'login.html';
+            } else {
+                // Cargar información del usuario y datos del dashboard
+                this.loadUserInfo(user);
+                this.loadDashboardData();
+            }
+        });
+    }
+
     addEventListeners() {
-        // Add any dashboard-specific event listeners here
+        // Logout button
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleLogout();
+            });
+        }
+    }
+
+    async loadUserInfo(user) {
+        const userNameElement = document.getElementById('user-name');
+        const userAvatar = document.getElementById('user-avatar');
+        
+        if (userNameElement) {
+            userNameElement.textContent = user.email;
+        }
+        
+        if (userAvatar) {
+            userAvatar.textContent = user.email.charAt(0).toUpperCase();
+        }
+
+        // Intentar obtener información adicional de Firestore
+        try {
+            const userDoc = await this.db.collection('users').doc(user.uid).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                if (userData.name && userNameElement) {
+                    userNameElement.textContent = userData.name;
+                }
+                if (userData.name && userAvatar) {
+                    userAvatar.textContent = userData.name.charAt(0).toUpperCase();
+                }
+            }
+        } catch (error) {
+            console.error('Error cargando información del usuario:', error);
+        }
     }
 
     loadDashboardData() {
-        // Simulate loading data (in real app, this would come from Firebase)
+        // Simular carga de datos (en app real, vendría de Firebase)
         setTimeout(() => {
             this.updateRecentActivity();
         }, 1000);
@@ -57,6 +109,16 @@ class DashboardManager {
                 </tr>
             `).join('');
         }
+    }
+
+    handleLogout() {
+        this.auth.signOut().then(() => {
+            // El onAuthStateChanged detectará el logout y redirigirá automáticamente
+            console.log('Sesión cerrada exitosamente');
+        }).catch((error) => {
+            console.error('Error al cerrar sesión:', error);
+            alert('Error al cerrar sesión: ' + error.message);
+        });
     }
 }
 

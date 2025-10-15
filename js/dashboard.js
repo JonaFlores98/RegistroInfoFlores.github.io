@@ -5,6 +5,7 @@ class DashboardManager {
         this.db = firebase.firestore();
         this.currentUser = null;
         this.userData = null;
+        this.selectedGrade = 'all'; // Filtro por grado
         this.init();
     }
 
@@ -59,10 +60,265 @@ class DashboardManager {
         // Cargar datos en tiempo real
         await this.loadStudentsStats();
         await this.loadAttendanceStats();
+        await this.loadGradeStats(); // Nuevo método para estadísticas por grado
         await this.loadRecentActivity();
 
         // Escuchar cambios en tiempo real
         this.setupRealTimeListeners();
+    }
+
+    addEventListeners() {
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleLogout();
+            });
+        }
+
+        // ⭐ NUEVO: Selector de grado para filtrar estadísticas
+        const gradeFilter = document.getElementById('grade-filter');
+        if (gradeFilter) {
+            gradeFilter.addEventListener('change', (e) => {
+                this.selectedGrade = e.target.value;
+                this.refreshAllStats();
+            });
+        }
+    }
+
+    // ⭐ NUEVO: Refrescar todas las estadísticas
+    async refreshAllStats() {
+        await this.loadStudentsStats();
+        await this.loadAttendanceStats();
+        await this.loadGradeStats();
+    }
+
+    async loadStudentsStats() {
+        try {
+            let studentsQuery = this.db.collection('estudiantes')
+                .where('profesorId', '==', this.currentUser.uid);
+
+            // Aplicar filtro por grado si no es "all"
+            if (this.selectedGrade !== 'all') {
+                studentsQuery = studentsQuery.where('grado', '==', this.selectedGrade);
+            }
+
+            const studentsSnapshot = await studentsQuery.get();
+
+            const totalStudents = studentsSnapshot.size;
+
+            // Contar estudiantes por grado (solo si no hay filtro aplicado)
+            const studentsByGrade = {};
+            if (this.selectedGrade === 'all') {
+                studentsSnapshot.forEach(doc => {
+                    const student = doc.data();
+                    const grade = student.grado;
+                    studentsByGrade[grade] = (studentsByGrade[grade] || 0) + 1;
+                });
+            }
+
+            const activeClasses = this.selectedGrade === 'all' ?
+                Object.keys(studentsByGrade).length : 1;
+
+            // Actualizar UI
+            document.getElementById('total-students').textContent = totalStudents;
+            document.getElementById('active-classes').textContent =
+                activeClasses + ' grupo' + (activeClasses !== 1 ? 's' : '');
+
+        } catch (error) {
+            console.error('Error cargando estadísticas de estudiantes:', error);
+            document.getElementById('total-students').textContent = '0';
+            document.getElementById('active-classes').textContent = '0 grupos';
+        }
+    }
+
+    async loadAttendanceStats() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+
+            let attendanceQuery = this.db.collection('asistencias')
+                .where('profesorId', '==', this.currentUser.uid)
+                .where('fecha', '==', today);
+
+            // Aplicar filtro por grado si no es "all"
+            if (this.selectedGrade !== 'all') {
+                attendanceQuery = attendanceQuery.where('clase', '==', this.selectedGrade);
+            }
+
+            const attendanceSnapshot = await attendanceQuery.get();
+
+            let totalPresent = 0;
+            let totalStudents = 0;
+            let attendanceByGrade = {};
+
+            if (!attendanceSnapshot.empty) {
+                attendanceSnapshot.forEach(doc => {
+                    const attendance = doc.data();
+                    const students = attendance.estudiantes || [];
+                    const grade = attendance.clase;
+
+                    const presentCount = students.filter(s => s.estado === 'presente').length;
+                    totalPresent += presentCount;
+                    totalStudents += students.length;
+
+                    // Estadísticas por grado
+                    if (!attendanceByGrade[grade]) {
+                        attendanceByGrade[grade] = { present: 0, total: 0 };
+                    }
+                    attendanceByGrade[grade].present += presentCount;
+                    attendanceByGrade[grade].total += students.length;
+                });
+            }
+
+            // Calcular porcentajes
+            const overallPercentage = totalStudents > 0 ?
+                Math.round((totalPresent / totalStudents) * 100) : 0;
+
+            // Actualizar UI
+            const attendanceElement = document.getElementById('attendance-today');
+            if (this.selectedGrade === 'all') {
+                attendanceElement.textContent = `${overallPercentage}% de presencia (General)`;
+                attendanceElement.title = `Total: ${totalPresent}/${totalStudents} estudiantes`;
+            } else {
+                const gradeName = this.getGradeDisplayName(this.selectedGrade);
+                attendanceElement.textContent = `${overallPercentage}% de presencia (${gradeName})`;
+                attendanceElement.title = `${gradeName}: ${totalPresent}/${totalStudents} estudiantes`;
+            }
+
+            // ⭐ NUEVO: Mostrar desglose por grados si es vista general
+            this.updateAttendanceBreakdown(attendanceByGrade);
+
+        } catch (error) {
+            console.error('Error cargando estadísticas de asistencia:', error);
+            document.getElementById('attendance-today').textContent = '0% de presencia';
+        }
+    }
+
+    // ⭐ NUEVO: Método para estadísticas de calificaciones por grado
+    async loadGradeStats() {
+        try {
+            let gradesQuery = this.db.collection('calificaciones')
+                .where('profesorId', '==', this.currentUser.uid);
+
+            // Aplicar filtro por grado si no es "all"
+            if (this.selectedGrade !== 'all') {
+                gradesQuery = gradesQuery.where('grado', '==', this.selectedGrade);
+            }
+
+            const gradesSnapshot = await gradesQuery.limit(200).get();
+
+            let totalGrades = 0;
+            let gradeCount = 0;
+            let gradesBySubject = {};
+            let gradesByGrade = {};
+
+            gradesSnapshot.forEach(doc => {
+                const gradeData = doc.data();
+                if (gradeData.calificacion && gradeData.calificacion > 0) {
+                    const gradeValue = gradeData.calificacion;
+                    totalGrades += gradeValue;
+                    gradeCount++;
+
+                    // Estadísticas por materia
+                    const subject = gradeData.materia || 'Sin materia';
+                    if (!gradesBySubject[subject]) {
+                        gradesBySubject[subject] = { total: 0, count: 0 };
+                    }
+                    gradesBySubject[subject].total += gradeValue;
+                    gradesBySubject[subject].count++;
+
+                    // Estadísticas por grado
+                    const gradeLevel = gradeData.grado;
+                    if (!gradesByGrade[gradeLevel]) {
+                        gradesByGrade[gradeLevel] = { total: 0, count: 0 };
+                    }
+                    gradesByGrade[gradeLevel].total += gradeValue;
+                    gradesByGrade[gradeLevel].count++;
+                }
+            });
+
+            const averageGrade = gradeCount > 0 ? (totalGrades / gradeCount).toFixed(1) : 0;
+
+            // Actualizar UI
+            const gradeElement = document.getElementById('average-grade');
+            if (this.selectedGrade === 'all') {
+                gradeElement.textContent = `${averageGrade} / 10 (Promedio General)`;
+                gradeElement.title = `Basado en ${gradeCount} calificaciones`;
+            } else {
+                const gradeName = this.getGradeDisplayName(this.selectedGrade);
+                gradeElement.textContent = `${averageGrade} / 10 (${gradeName})`;
+                gradeElement.title = `${gradeName}: ${gradeCount} calificaciones`;
+            }
+
+            // ⭐ NUEVO: Mostrar desglose de calificaciones
+            this.updateGradesBreakdown(gradesBySubject, gradesByGrade);
+
+        } catch (error) {
+            console.error('Error cargando estadísticas de calificaciones:', error);
+            document.getElementById('average-grade').textContent = '0 / 10';
+        }
+    }
+
+    // ⭐ NUEVO: Actualizar desglose de asistencia
+    updateAttendanceBreakdown(attendanceByGrade) {
+        const breakdownElement = document.getElementById('attendance-breakdown');
+        if (!breakdownElement) return;
+
+        if (this.selectedGrade === 'all' && Object.keys(attendanceByGrade).length > 0) {
+            let html = '<div class="breakdown-container"><h4>Asistencia por Grado:</h4>';
+
+            Object.keys(attendanceByGrade).forEach(grade => {
+                const data = attendanceByGrade[grade];
+                if (data.total > 0) {
+                    const percentage = Math.round((data.present / data.total) * 100);
+                    const gradeName = this.getGradeDisplayName(grade);
+                    html += `
+                        <div class="breakdown-item">
+                            <span class="grade-name">${gradeName}:</span>
+                            <span class="grade-percentage">${percentage}%</span>
+                            <span class="grade-count">(${data.present}/${data.total})</span>
+                        </div>
+                    `;
+                }
+            });
+
+            html += '</div>';
+            breakdownElement.innerHTML = html;
+            breakdownElement.style.display = 'block';
+        } else {
+            breakdownElement.style.display = 'none';
+        }
+    }
+
+    // ⭐ NUEVO: Actualizar desglose de calificaciones
+    updateGradesBreakdown(gradesBySubject, gradesByGrade) {
+        const breakdownElement = document.getElementById('grades-breakdown');
+        if (!breakdownElement) return;
+
+        if (this.selectedGrade === 'all' && Object.keys(gradesByGrade).length > 0) {
+            let html = '<div class="breakdown-container"><h4>Promedios por Grado:</h4>';
+
+            Object.keys(gradesByGrade).forEach(grade => {
+                const data = gradesByGrade[grade];
+                if (data.count > 0) {
+                    const average = (data.total / data.count).toFixed(1);
+                    const gradeName = this.getGradeDisplayName(grade);
+                    html += `
+                        <div class="breakdown-item">
+                            <span class="grade-name">${gradeName}:</span>
+                            <span class="grade-average">${average} / 10</span>
+                            <span class="grade-count">(${data.count} eval.)</span>
+                        </div>
+                    `;
+                }
+            });
+
+            html += '</div>';
+            breakdownElement.innerHTML = html;
+            breakdownElement.style.display = 'block';
+        } else {
+            breakdownElement.style.display = 'none';
+        }
     }
 
     async loadStudentsStats() {

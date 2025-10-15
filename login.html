@@ -24,6 +24,13 @@
                     <input type="password" id="password" class="form-control" placeholder="Ingresa tu contraseña" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                
+                <!-- Botón para crear usuario -->
+                <div style="margin-top: 1rem; text-align: center;">
+                    <a href="create-user.html" class="btn btn-secondary" style="display: inline-block; width: auto; padding: 0.5rem 1rem;">
+                        Crear Usuario
+                    </a>
+                </div>
             </form>
             <div class="login-footer">
                 <a href="index.html">← Volver al inicio</a>
@@ -31,7 +38,14 @@
         </div>
     </div>
 
-    <!-- Solo nuestros archivos (los imports están dentro) -->
-    <script type="module" src="js/auth.js"></script>
+    <!-- Firebase SDKs (versión compatibilidad) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Configuración Firebase -->
+    <script src="js/firebase-config-compat.js"></script>
+    <!-- Lógica de autenticación -->
+    <script src="js/auth-compat.js"></script>
 </body>
 </html>

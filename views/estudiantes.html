@@ -8,6 +8,31 @@
     <link rel="stylesheet" href="../css/dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Animaciones para los mensajes de éxito */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -556,6 +581,42 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agrégalo justo después del modal principal, antes de los scripts -->
+    <!-- Modal de Confirmación para Eliminar -->
+    <div id="delete-confirm-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #dc3545, #c82333);">
+                <h3>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Confirmar Eliminación
+                </h3>
+                <button class="btn-close" id="close-delete-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; padding: 1rem;">
+                    <i class="fas fa-trash-alt" style="font-size: 3rem; color: #dc3545; margin-bottom: 1rem;"></i>
+                    <h4 style="color: #dc3545; margin-bottom: 0.5rem;">¿Estás seguro?</h4>
+                    <p id="delete-message" style="color: #6c757d; margin-bottom: 2rem;">
+                        Esta acción no se puede deshacer. El estudiante será eliminado permanentemente.
+                    </p>
+
+                    <div class="btn-group" style="justify-content: center;">
+                        <button type="button" class="btn btn-secondary" id="cancel-delete">
+                            <i class="fas fa-times"></i>
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-danger" id="confirm-delete">
+                            <i class="fas fa-trash"></i>
+                            Sí, Eliminar
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

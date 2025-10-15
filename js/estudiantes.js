@@ -8,6 +8,7 @@ class StudentsManager {
         this.students = [];
         this.filteredStudents = [];
         this.editingStudent = null;
+        this.studentToDelete = null; // <- NUEVA: para guardar el estudiante a eliminar
         this.init();
     }
 
@@ -50,41 +51,32 @@ class StudentsManager {
     }
 
     setupEventListeners() {
-        console.log('Configurando event listeners...'); // Para debug
+        console.log('Configurando event listeners...');
 
-        // Botones principales - USAR DELEGACIÓN DE EVENTOS
-        document.addEventListener('click', (e) => {
-            if (e.target.id === 'add-student-btn' || e.target.closest('#add-student-btn')) {
-                this.showModal();
-            }
-            if (e.target.id === 'empty-add-btn' || e.target.closest('#empty-add-btn')) {
-                this.showModal();
-            }
-        });
+        // Botones principales
+        document.getElementById('add-student-btn').addEventListener('click', () => this.showModal());
+        document.getElementById('empty-add-btn').addEventListener('click', () => this.showModal());
 
-        // Modal - manera directa también por si acaso
-        const addBtn = document.getElementById('add-student-btn');
-        const emptyAddBtn = document.getElementById('empty-add-btn');
-
-        if (addBtn) {
-            addBtn.addEventListener('click', () => this.showModal());
-        }
-        if (emptyAddBtn) {
-            emptyAddBtn.addEventListener('click', () => this.showModal());
-        }
-
-        // Resto de event listeners
+        // Modal principal
         document.getElementById('close-modal').addEventListener('click', () => this.hideModal());
         document.getElementById('cancel-btn').addEventListener('click', () => this.hideModal());
         document.getElementById('student-form').addEventListener('submit', (e) => this.handleSubmit(e));
+
+        // Modal de confirmación de eliminación - NUEVO
+        document.getElementById('close-delete-modal').addEventListener('click', () => this.hideDeleteModal());
+        document.getElementById('cancel-delete').addEventListener('click', () => this.hideDeleteModal());
+        document.getElementById('confirm-delete').addEventListener('click', () => this.confirmDelete());
 
         // Búsqueda y filtros
         document.getElementById('search-input').addEventListener('input', (e) => this.handleSearch(e.target.value));
         document.getElementById('grade-filter').addEventListener('change', (e) => this.handleGradeFilter(e.target.value));
 
-        // Cerrar modal al hacer clic fuera
+        // Cerrar modales al hacer clic fuera
         document.getElementById('student-modal').addEventListener('click', (e) => {
             if (e.target.id === 'student-modal') this.hideModal();
+        });
+        document.getElementById('delete-confirm-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'delete-confirm-modal') this.hideDeleteModal();
         });
     }
 
@@ -133,7 +125,7 @@ class StudentsManager {
             });
 
             this.filteredStudents = [...this.students];
-            this.renderStudents();  
+            this.renderStudents();
             this.updateStudentsCount();
 
         } catch (error) {
@@ -409,16 +401,96 @@ class StudentsManager {
     }
 
     async deleteStudent(studentId) {
-        if (!confirm('¿Estás seguro de que quieres eliminar este estudiante? Esta acción no se puede deshacer.')) {
-            return;
+        const student = this.students.find(s => s.id === studentId);
+        if (student) {
+            this.studentToDelete = student;
+            this.showDeleteModal(student);
         }
+    }
+
+    // NUEVOS MÉTODOS PARA EL MODAL DE CONFIRMACIÓN
+    showDeleteModal(student) {
+        const modal = document.getElementById('delete-confirm-modal');
+        const message = document.getElementById('delete-message');
+
+        message.textContent = `¿Estás seguro de que quieres eliminar a "${student.nombreCompleto}"? Esta acción no se puede deshacer.`;
+
+        modal.style.display = 'block';
+    }
+
+    hideDeleteModal() {
+        document.getElementById('delete-confirm-modal').style.display = 'none';
+        this.studentToDelete = null;
+    }
+
+    async confirmDelete() {
+        if (!this.studentToDelete) return;
+
+        const studentId = this.studentToDelete.id;
+        const studentName = this.studentToDelete.nombreCompleto;
 
         try {
+            // Mostrar loading en el botón
+            const confirmBtn = document.getElementById('confirm-delete');
+            const originalText = confirmBtn.innerHTML;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+            confirmBtn.disabled = true;
+
             await this.db.collection('estudiantes').doc(studentId).delete();
+
+            // Ocultar modal y mostrar feedback
+            this.hideDeleteModal();
+
+            // Mostrar mensaje de éxito temporal
+            this.showSuccessMessage(`Estudiante "${studentName}" eliminado correctamente`);
+
             await this.loadStudents();
+
         } catch (error) {
+            console.error('Error al eliminar estudiante:', error);
             alert('Error al eliminar estudiante: ' + error.message);
+
+            // Restaurar botón en caso de error
+            const confirmBtn = document.getElementById('confirm-delete');
+            confirmBtn.innerHTML = '<i class="fas fa-trash"></i> Sí, Eliminar';
+            confirmBtn.disabled = false;
         }
+    }
+
+    // Método para mostrar mensajes de éxito
+    showSuccessMessage(message) {
+        // Crear elemento de mensaje
+        const successDiv = document.createElement('div');
+        successDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        animation: slideInRight 0.3s ease-out;
+    `;
+
+        successDiv.innerHTML = `
+        <i class="fas fa-check-circle"></i>
+        <span>${message}</span>
+    `;
+
+        document.body.appendChild(successDiv);
+
+        // Auto-eliminar después de 3 segundos
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => successDiv.remove(), 300);
+            }
+        }, 3000);
     }
 
     handleSearch(searchTerm) {

@@ -25,6 +25,7 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
                 
+                <!-- Botón para crear usuario -->
                 <div style="margin-top: 1rem; text-align: center;">
                     <a href="create-user.html" class="btn btn-secondary" style="display: inline-block; width: auto; padding: 0.5rem 1rem;">
                         Crear Usuario
@@ -37,70 +38,14 @@
         </div>
     </div>
 
-    <!-- Firebase -->
+    <!-- Firebase SDKs (versión compatibilidad) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <script>
-        // Configuración directa en el HTML
-        const firebaseConfig = {
-            apiKey: "AIzaSyAmqWjpS2bYaNtPA_LhYLMh5KuwOOmEk2Y",
-            authDomain: "sistema-docente-informatica.firebaseapp.com",
-            projectId: "sistema-docente-informatica",
-            storageBucket: "sistema-docente-informatica.firebasestorage.app",
-            messagingSenderId: "317682841841",
-            appId: "1:317682841841:web:e0022e870491b701365150"
-        };
-
-        // Inicializar Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        // Lógica de login simple
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const button = e.target.querySelector('button[type="submit"]');
-            
-            try {
-                // Mostrar loading
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando...';
-                button.disabled = true;
-                
-                // Iniciar sesión
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                
-                // Redirigir manualmente
-                window.location.href = 'dashboard.html';
-                
-            } catch (error) {
-                // Mostrar error
-                let errorMessage = 'Error al iniciar sesión';
-                if (error.code === 'auth/user-not-found') {
-                    errorMessage = 'No existe una cuenta con este email';
-                } else if (error.code === 'auth/wrong-password') {
-                    errorMessage = 'La contraseña es incorrecta';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'El formato del email es incorrecto';
-                }
-                
-                alert(errorMessage);
-                button.innerHTML = 'Iniciar Sesión';
-                button.disabled = false;
-            }
-        });
-
-        // Verificar si ya está autenticado
-        auth.onAuthStateChanged((user) => {
-            if (user && window.location.pathname.includes('login.html')) {
-                // Si ya está logueado y está en login, redirigir a dashboard
-                window.location.href = 'dashboard.html';
-            }
-        });
-    </script>
+    <!-- Configuración Firebase -->
+    <script src="js/firebase-config-compat.js"></script>
+    <!-- Lógica de autenticación -->
+    <script src="js/auth-compat.js"></script>
 </body>
 </html>

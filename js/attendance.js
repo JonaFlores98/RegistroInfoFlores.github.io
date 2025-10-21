@@ -8,8 +8,8 @@ class AttendanceManager {
         this.selectedGrade = '';
         this.attendanceData = {};
         this.students = [];
-        this.classSchedule = []; // Horario del docente
-        this.currentPeriod = null; // Período actual detectado
+        this.classSchedule = [];
+        this.currentPeriod = null;
 
         this.init();
     }
@@ -25,9 +25,9 @@ class AttendanceManager {
 
             console.log('Usuario autenticado:', this.currentUser.uid);
             await this.setupEventListeners();
-            await this.loadClassSchedule(); // Cargar horario primero
+            await this.loadClassSchedule();
             await this.loadGrades();
-            this.showRecommendedClass(); // Mostrar clase recomendada
+            this.showRecommendedClass();
 
         } catch (error) {
             console.error('Error en init:', error);
@@ -43,7 +43,6 @@ class AttendanceManager {
         });
     }
 
-    // NUEVO: Cargar horario del docente
     async loadClassSchedule() {
         try {
             const scheduleSnapshot = await this.db.collection('horarios')
@@ -61,24 +60,21 @@ class AttendanceManager {
             console.log('Horario cargado:', this.classSchedule);
 
         } catch (error) {
-            console.log('No se encontró horario configurado, se puede configurar más tarde');
+            console.log('No se encontró horario configurado');
             this.classSchedule = [];
         }
     }
 
-    // NUEVO: Detectar clase recomendada basada en hora actual
     getCurrentClassPeriod() {
         const now = new Date();
-        const currentTime = now.getHours() * 100 + now.getMinutes(); // Formato HHMM
-        const currentDay = now.getDay(); // 0=Domingo, 1=Lunes, etc.
+        const currentTime = now.getHours() * 100 + now.getMinutes();
+        const currentDay = now.getDay();
 
-        // Mapeo de días
         const daysMap = { 1: 'lunes', 2: 'martes', 3: 'miercoles', 4: 'jueves', 5: 'viernes' };
         const currentDayName = daysMap[currentDay];
 
-        if (!currentDayName) return null; // Fin de semana
+        if (!currentDayName) return null;
 
-        // Definir períodos basados en el horario que proporcionaste
         const periods = [
             { start: 700, end: 745, name: 'Primera clase', period: 1 },
             { start: 745, end: 830, name: 'Segunda clase', period: 2 },
@@ -91,13 +87,11 @@ class AttendanceManager {
             { start: 1400, end: 1445, name: 'Novena clase', period: 9 }
         ];
 
-        // Encontrar período actual
         const currentPeriod = periods.find(p => currentTime >= p.start && currentTime <= p.end);
-
+        
         if (!currentPeriod) return null;
 
-        // Buscar en el horario del docente
-        const todaysSchedule = this.classSchedule.filter(s =>
+        const todaysSchedule = this.classSchedule.filter(s => 
             s.dia === currentDayName && s.periodo === currentPeriod.period
         );
 
@@ -108,7 +102,6 @@ class AttendanceManager {
         };
     }
 
-    // NUEVO: Mostrar clase recomendada
     showRecommendedClass() {
         const container = document.getElementById('recommended-class-container');
         const recommended = this.getCurrentClassPeriod();
@@ -118,7 +111,7 @@ class AttendanceManager {
             return;
         }
 
-        const classInfo = recommended.classes[0]; // Tomar la primera clase del período
+        const classInfo = recommended.classes[0];
 
         container.innerHTML = `
             <div class="recommended-class">
@@ -142,7 +135,6 @@ class AttendanceManager {
         container.style.display = 'block';
     }
 
-    // NUEVO: Establecer clase recomendada
     setRecommendedClass(grade) {
         document.getElementById('attendance-grade').value = grade;
         document.getElementById('attendance-date').value = this.selectedDate;
@@ -151,19 +143,16 @@ class AttendanceManager {
         document.getElementById('recommended-class-container').style.display = 'none';
     }
 
-    // NUEVO: Ocultar clase recomendada
     hideRecommendedClass() {
         document.getElementById('recommended-class-container').style.display = 'none';
     }
 
-    // NUEVO: Helper para formatear hora
     formatTime(timeNumber) {
         const hours = Math.floor(timeNumber / 100);
         const minutes = timeNumber % 100;
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     }
 
-    // NUEVO: Helper para nombre del día
     getDayDisplayName(day) {
         const days = {
             'lunes': 'Lunes',
@@ -176,7 +165,6 @@ class AttendanceManager {
     }
 
     async setupEventListeners() {
-        // Selector de fecha
         const datePicker = document.getElementById('attendance-date');
         if (datePicker) {
             datePicker.value = this.selectedDate;
@@ -188,7 +176,6 @@ class AttendanceManager {
             });
         }
 
-        // Selector de grado
         const gradeSelect = document.getElementById('attendance-grade');
         if (gradeSelect) {
             gradeSelect.addEventListener('change', (e) => {
@@ -201,21 +188,17 @@ class AttendanceManager {
             });
         }
 
-        // Búsqueda - INPUT (búsqueda en tiempo real)
         const searchInput = document.getElementById('student-search');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 const term = e.target.value.trim();
                 this.handleSearch(term);
-
-                // Mostrar/ocultar botón limpiar
                 const clearBtn = document.getElementById('clear-search');
                 if (clearBtn) {
                     clearBtn.style.display = term ? 'block' : 'none';
                 }
             });
 
-            // También buscar al presionar Enter
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     this.handleSearch(e.target.value.trim());
@@ -223,7 +206,6 @@ class AttendanceManager {
             });
         }
 
-        // Búsqueda - BOTÓN
         const searchBtn = document.getElementById('search-btn');
         if (searchBtn) {
             searchBtn.addEventListener('click', () => {
@@ -234,7 +216,6 @@ class AttendanceManager {
             });
         }
 
-        // Limpiar búsqueda
         const clearBtn = document.getElementById('clear-search');
         if (clearBtn) {
             clearBtn.addEventListener('click', () => {
@@ -250,8 +231,6 @@ class AttendanceManager {
 
     async loadGrades() {
         try {
-            console.log('Cargando grados... Usuario:', this.currentUser.uid);
-
             const gradesSnapshot = await this.db.collection('estudiantes')
                 .where('profesorId', '==', this.currentUser.uid)
                 .get();
@@ -264,7 +243,6 @@ class AttendanceManager {
                 }
             });
 
-            console.log('Grados encontrados:', Array.from(grades));
             this.populateGradeSelect(Array.from(grades));
 
         } catch (error) {
@@ -281,9 +259,9 @@ class AttendanceManager {
         rows.forEach(row => {
             const studentName = row.querySelector('.student-name').textContent.toLowerCase();
             const studentId = row.querySelector('.student-id').textContent.toLowerCase();
-
+            
             const matches = studentName.includes(term) || studentId.includes(term);
-
+            
             if (matches) {
                 row.style.display = '';
                 foundCount++;
@@ -292,17 +270,15 @@ class AttendanceManager {
             }
         });
 
-        // Mostrar mensaje si no se encontraron resultados
         this.showSearchResults(foundCount, term);
     }
 
-    // NUEVO: Mostrar resultados de búsqueda
     showSearchResults(foundCount, searchTerm) {
         const summaryElement = document.getElementById('attendance-summary');
         if (!summaryElement) return;
 
         const total = this.students.length;
-
+        
         if (searchTerm && foundCount === 0) {
             summaryElement.innerHTML = `❌ No se encontraron estudiantes para "${searchTerm}"`;
             summaryElement.style.color = '#e74c3c';
@@ -310,9 +286,8 @@ class AttendanceManager {
             summaryElement.innerHTML = `🔍 ${foundCount} de ${total} estudiantes encontrados para "${searchTerm}"`;
             summaryElement.style.color = '#27ae60';
         } else {
-            // Restaurar resumen normal
             this.updateSummary();
-            summaryElement.style.color = ''; // Reset color
+            summaryElement.style.color = '';
         }
     }
 
@@ -330,8 +305,6 @@ class AttendanceManager {
             option.textContent = this.getGradeDisplayName(grade);
             gradeSelect.appendChild(option);
         });
-
-        console.log('Select de grados poblado con:', sortedGrades.length, 'grados');
     }
 
     sortGrades(grades) {
@@ -352,16 +325,12 @@ class AttendanceManager {
         if (!this.selectedGrade) return;
 
         try {
-            console.log('🔍 Cargando estudiantes para grado:', this.selectedGrade);
-
             this.showLoading('Cargando estudiantes...');
 
             const studentsSnapshot = await this.db.collection('estudiantes')
                 .where('profesorId', '==', this.currentUser.uid)
                 .where('grado', '==', this.selectedGrade)
                 .get();
-
-            console.log('📊 Resultado de la consulta:', studentsSnapshot.size, 'estudiantes encontrados');
 
             this.students = [];
             studentsSnapshot.forEach(doc => {
@@ -374,8 +343,6 @@ class AttendanceManager {
                     activo: studentData.estado === 'activo'
                 });
             });
-
-            console.log('✅ Estudiantes procesados:', this.students);
 
             if (this.students.length === 0) {
                 this.showNoDataMessage();
@@ -395,8 +362,6 @@ class AttendanceManager {
         if (!this.selectedGrade) return;
 
         try {
-            console.log('Cargando asistencia para:', this.selectedGrade, this.selectedDate);
-
             const attendanceSnapshot = await this.db.collection('asistencias')
                 .where('profesorId', '==', this.currentUser.uid)
                 .where('clase', '==', this.selectedGrade)
@@ -406,7 +371,6 @@ class AttendanceManager {
             this.attendanceData = {};
 
             if (!attendanceSnapshot.empty) {
-                console.log('Asistencia existente encontrada');
                 attendanceSnapshot.forEach(doc => {
                     const data = doc.data();
                     this.attendanceDocId = doc.id;
@@ -417,7 +381,6 @@ class AttendanceManager {
                     }
                 });
             } else {
-                console.log('No hay asistencia registrada para esta fecha');
                 this.students.forEach(student => {
                     this.attendanceData[student.id] = 'pendiente';
                 });
@@ -432,123 +395,118 @@ class AttendanceManager {
     }
 
     renderAttendanceTable() {
-    const container = document.getElementById('attendance-container');
-    if (!container) return;
+        const container = document.getElementById('attendance-container');
+        if (!container) return;
 
-    console.log('🎨 Renderizando tabla con:', this.students.length, 'estudiantes');
-
-    if (!this.students || this.students.length === 0) {
-        container.innerHTML = `
-        <div class="no-data">
-            <div>📝</div>
-            <h3>No hay estudiantes en este grado</h3>
-            <p>No se encontraron estudiantes para ${this.getGradeDisplayName(this.selectedGrade)}</p>
-            <button class="btn btn-primary" onclick="attendanceManager.loadStudentsForAttendance()">
-                Reintentar
-            </button>
-        </div>
-    `;
-        return;
-    }
-
-    let html = `
-    <div class="attendance-container">
-        <div class="attendance-header">
-            <div>
-                <h3>📋 Lista de Asistencia - ${this.getGradeDisplayName(this.selectedGrade)}</h3>
-                <small>${this.selectedDate} | ${this.students.length} estudiantes</small>
+        if (!this.students || this.students.length === 0) {
+            container.innerHTML = `
+            <div class="no-data">
+                <div>📝</div>
+                <h3>No hay estudiantes en este grado</h3>
+                <p>No se encontraron estudiantes para ${this.getGradeDisplayName(this.selectedGrade)}</p>
+                <button class="btn btn-primary" onclick="attendanceManager.loadStudentsForAttendance()">
+                    Reintentar
+                </button>
             </div>
-        </div>
-        <div class="attendance-table-container">
-            <table class="attendance-table">
-                <thead>
-                    <tr>
-                        <th width="40%">Estudiante</th>
-                        <th width="20%">Estado</th>
-                        <th width="40%">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
+        `;
+            return;
+        }
 
-    this.students.forEach((student) => {
-        const currentStatus = this.attendanceData[student.id] || 'pendiente';
-        const statusClass = this.getStatusClass(currentStatus);
+        let html = `
+        <div class="attendance-container">
+            <div class="attendance-header">
+                <div>
+                    <h3>📋 Lista de Asistencia - ${this.getGradeDisplayName(this.selectedGrade)}</h3>
+                    <small>${this.selectedDate} | ${this.students.length} estudiantes</small>
+                </div>
+            </div>
+            <div class="attendance-table-container">
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th width="40%">Estudiante</th>
+                            <th width="20%">Estado</th>
+                            <th width="40%">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        this.students.forEach((student) => {
+            const currentStatus = this.attendanceData[student.id] || 'pendiente';
+            const statusClass = this.getStatusClass(currentStatus);
+
+            html += `
+            <tr class="student-row" data-student-id="${student.id}">
+                <td>
+                    <div class="student-info">
+                        <span class="student-name">${student.nombre}</span>
+                        <span class="student-id">${student.identificacion || 'Sin identificación'}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge ${statusClass}" id="status-${student.id}">
+                        ${this.getStatusDisplayName(currentStatus)}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-status btn-present" data-status="presente" data-student="${student.id}">
+                            ✅ <span>Presente</span>
+                        </button>
+                        <button class="btn-status btn-absent" data-status="ausente" data-student="${student.id}">
+                            ❌ <span>Ausente</span>
+                        </button>
+                        <button class="btn-status btn-late" data-status="tarde" data-student="${student.id}">
+                            ⏰ <span>Tarde</span>
+                        </button>
+                        <button class="btn-status btn-permit" data-status="permiso" data-student="${student.id}">
+                            📝 <span>Permiso</span>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        });
 
         html += `
-        <tr class="student-row" data-student-id="${student.id}">
-            <td>
-                <div class="student-info">
-                    <span class="student-name">${student.nombre}</span>
-                    <span class="student-id">${student.identificacion || 'Sin identificación'}</span>
-                </div>
-            </td>
-            <td>
-                <span class="status-badge ${statusClass}" id="status-${student.id}">
-                    ${this.getStatusDisplayName(currentStatus)}
-                </span>
-            </td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn-status btn-present" data-status="presente" data-student="${student.id}">
-                        ✅ Presente
+                    </tbody>
+                </table>
+            </div>
+            <div class="attendance-footer">
+                <div class="footer-content">
+                    <button id="save-attendance" class="btn btn-primary save-btn">
+                        💾 Guardar Asistencia
                     </button>
-                    <button class="btn-status btn-absent" data-status="ausente" data-student="${student.id}">
-                        ❌ Ausente
-                    </button>
-                    <button class="btn-status btn-late" data-status="tarde" data-student="${student.id}">
-                        ⏰ Tarde
-                    </button>
-                    <button class="btn-status btn-permit" data-status="permiso" data-student="${student.id}">
-                        📝 Con Permiso
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `;
-    });
-
-    html += `
-                </tbody>
-            </table>
-        </div>
-        <div class="attendance-footer">
-            <div class="footer-content">
-                <button id="save-attendance" class="btn btn-primary save-btn">
-                    💾 Guardar Asistencia
-                </button>
-                <div class="summary" id="attendance-summary">
-                    ${this.getSummaryText()}
+                    <div class="summary" id="attendance-summary">
+                        ${this.getSummaryText()}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    `;
+        `;
 
-    container.innerHTML = html;
-    this.attachEventListeners();
-    this.updateSummary();
-}
+        container.innerHTML = html;
+        this.attachEventListeners();
+        this.updateSummary();
+    }
 
     attachEventListeners() {
-        // Botones de estado
         document.querySelectorAll('.btn-status').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const studentId = e.target.dataset.student;
-                const status = e.target.dataset.status;
+                const studentId = e.target.closest('.btn-status').dataset.student;
+                const status = e.target.closest('.btn-status').dataset.status;
                 this.setStudentStatus(studentId, status);
             });
         });
 
-        // Acciones rápidas (ACTUALIZADO CON NUEVO ESTADO)
         document.querySelectorAll('.quick-action').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const action = e.target.dataset.action;
+                const action = e.target.closest('.quick-action').dataset.action;
                 this.handleQuickAction(action);
             });
         });
 
-        // Guardar
         const saveBtn = document.getElementById('save-attendance');
         if (saveBtn) {
             saveBtn.addEventListener('click', () => this.saveAttendance());
@@ -567,13 +525,12 @@ class AttendanceManager {
         this.updateSummary();
     }
 
-    // ACTUALIZADO: Incluir nuevo estado "permiso"
     handleQuickAction(action) {
         const statusMap = {
             'all-present': 'presente',
             'all-absent': 'ausente',
             'all-late': 'tarde',
-            'all-permit': 'permiso' // NUEVO
+            'all-permit': 'permiso'
         };
 
         const status = statusMap[action];
@@ -592,15 +549,12 @@ class AttendanceManager {
         }
 
         try {
-            console.log('Guardando asistencia...');
-
             const studentsAttendance = this.students.map(student => ({
                 id: student.id,
                 nombre: student.nombre,
                 estado: this.attendanceData[student.id] || 'ausente'
             }));
 
-            // ACTUALIZADO: Incluir conteo de permisos
             const attendanceRecord = {
                 profesorId: this.currentUser.uid,
                 clase: this.selectedGrade,
@@ -611,17 +565,15 @@ class AttendanceManager {
                 presentes: this.getCountByStatus('presente'),
                 ausentes: this.getCountByStatus('ausente'),
                 tardes: this.getCountByStatus('tarde'),
-                permisos: this.getCountByStatus('permiso') // NUEVO
+                permisos: this.getCountByStatus('permiso')
             };
 
             let savePromise;
 
             if (this.attendanceDocId) {
                 savePromise = this.db.collection('asistencias').doc(this.attendanceDocId).update(attendanceRecord);
-                console.log('Actualizando asistencia existente');
             } else {
                 savePromise = this.db.collection('asistencias').add(attendanceRecord);
-                console.log('Creando nueva asistencia');
             }
 
             await savePromise;
@@ -645,31 +597,14 @@ class AttendanceManager {
         }
     }
 
-    // ACTUALIZADO: Incluir nuevo estado en el resumen
     getSummaryText() {
         const total = this.students.length;
         const present = this.getCountByStatus('presente');
         const absent = this.getCountByStatus('ausente');
         const late = this.getCountByStatus('tarde');
-        const permit = this.getCountByStatus('permiso'); // NUEVO
+        const permit = this.getCountByStatus('permiso');
 
         return `Resumen: ✅ ${present} Presente | ❌ ${absent} Ausente | ⏰ ${late} Tarde | 📝 ${permit} Permiso | Total: ${total}`;
-    }
-
-    filterStudents(searchTerm) {
-        const rows = document.querySelectorAll('.student-row');
-        const term = searchTerm.toLowerCase();
-
-        rows.forEach(row => {
-            const studentName = row.querySelector('.student-name').textContent.toLowerCase();
-            const studentId = row.querySelector('.student-id').textContent.toLowerCase();
-
-            if (studentName.includes(term) || studentId.includes(term)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
     }
 
     getGradeDisplayName(grade) {
@@ -683,31 +618,28 @@ class AttendanceManager {
         return gradesMap[grade] || grade;
     }
 
-    // ACTUALIZADO: Incluir nuevo estado
     getStatusClass(status) {
         const classes = {
             'presente': 'status-present',
             'ausente': 'status-absent',
             'tarde': 'status-late',
-            'permiso': 'status-permit', // NUEVO
+            'permiso': 'status-permit',
             'pendiente': 'status-pending'
         };
         return classes[status] || 'status-pending';
     }
 
-    // ACTUALIZADO: Incluir nuevo estado
     getStatusDisplayName(status) {
         const names = {
             'presente': 'Presente',
             'ausente': 'Ausente',
             'tarde': 'Tarde',
-            'permiso': 'Con Permiso', // NUEVO
+            'permiso': 'Con Permiso',
             'pendiente': 'Pendiente'
         };
         return names[status] || status;
     }
 
-    // [MANTENER MÉTODOS DE UI EXISTENTES]
     showLoading(message) {
         const container = document.getElementById('attendance-container');
         if (container) {
@@ -767,10 +699,7 @@ class AttendanceManager {
 
     showModal(title, message, type = 'success') {
         const modal = document.getElementById('success-modal');
-        if (!modal) {
-            console.error('Modal no encontrado');
-            return;
-        }
+        if (!modal) return;
 
         const modalTitle = modal.querySelector('.modal-title');
         const modalMessage = modal.querySelector('.modal-message');

@@ -229,13 +229,45 @@
             box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
         }
 
+        /* MEJORAS PARA LA BÚSQUEDA - MÁS COMPACTA */
         .search-box {
             flex: 1;
-            min-width: 300px;
+            min-width: 250px;
         }
 
-        .search-box input {
+        .search-box-container {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .search-input-container {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-input-container i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            z-index: 2;
+        }
+
+        .search-input-container input {
+            padding-left: 35px;
             width: 100%;
+        }
+
+        .search-btn {
+            min-width: 90px;
+            white-space: nowrap;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
 
         .quick-actions {
@@ -245,7 +277,7 @@
         }
 
         .btn {
-            padding: 10px 20px;
+            padding: 10px 16px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -254,7 +286,7 @@
             transition: all 0.3s;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .btn-primary {
@@ -298,9 +330,6 @@
             padding: 20px;
             background: #f8f9fa;
             border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: between;
-            align-items: center;
         }
 
         .attendance-header h3 {
@@ -374,10 +403,10 @@
             border: 1px solid #f39c12;
         }
 
-        .status-justified {
-            background: #e8f4f8;
-            color: #3498db;
-            border: 1px solid #3498db;
+        .status-permit {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
         }
 
         .status-pending {
@@ -394,13 +423,16 @@
 
         .btn-status {
             padding: 6px 12px;
-            border: 1px solid #ddd;
+            border: 1px solid;
             border-radius: 4px;
             background: white;
             cursor: pointer;
             font-size: 12px;
             font-weight: 500;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .btn-present {
@@ -418,9 +450,10 @@
             border-color: #f39c12;
         }
 
-        .btn-justified {
-            color: #3498db;
-            border-color: #3498db;
+        .btn-permit {
+            color: #856404;
+            border-color: #ffeaa7;
+            background: #fff3cd;
         }
 
         .btn-present:hover {
@@ -438,8 +471,8 @@
             color: white;
         }
 
-        .btn-justified:hover {
-            background: #3498db;
+        .btn-permit:hover {
+            background: #856404;
             color: white;
         }
 
@@ -500,6 +533,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         .btn-outline {
@@ -511,119 +545,6 @@
         .btn-outline:hover {
             background: #3498db;
             color: white;
-        }
-
-        /* RESPONSIVE PARA TABLETS Y MÓVILES */
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-
-            .header {
-                padding: 15px;
-                margin-bottom: 15px;
-            }
-
-            .control-panel {
-                padding: 15px;
-                margin-bottom: 15px;
-                gap: 15px;
-            }
-
-            .form-group {
-                min-width: 100%;
-            }
-
-            .search-box {
-                min-width: 100%;
-            }
-
-            .quick-actions {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .attendance-header {
-                padding: 15px;
-            }
-
-            .attendance-table {
-                display: block;
-                overflow-x: auto;
-            }
-
-            .attendance-table th,
-            .attendance-table td {
-                padding: 12px 8px;
-                font-size: 14px;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-                gap: 5px;
-            }
-
-            .btn-status {
-                padding: 8px 10px;
-                font-size: 11px;
-                width: 100%;
-            }
-
-            .student-info {
-                min-width: 120px;
-            }
-
-            .footer-content {
-                gap: 12px;
-            }
-
-            .save-btn {
-                padding: 14px 20px;
-                font-size: 15px;
-            }
-
-            .summary {
-                font-size: 13px;
-                line-height: 1.4;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .header h1 {
-                font-size: 1.5rem;
-            }
-
-            .attendance-header h3 {
-                font-size: 1.1rem;
-            }
-
-            .btn {
-                padding: 8px 15px;
-                font-size: 13px;
-            }
-
-            .quick-actions {
-                flex-direction: column;
-            }
-
-            .quick-actions .btn {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .attendance-footer {
-                padding: 15px;
-            }
-
-            .save-btn {
-                padding: 14px 20px;
-                font-size: 15px;
-                max-width: 100%;
-            }
-
-            .summary {
-                font-size: 12px;
-            }
         }
 
         /* NUEVOS ESTILOS PARA LAS MEJORAS */
@@ -690,25 +611,108 @@
             transform: translateY(-2px);
         }
 
-        /* NUEVO ESTADO - AUSENCIA CON PERMISO */
-        .status-permit {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .btn-permit {
-            color: #856404;
-            border-color: #ffeaa7;
-        }
-
-        .btn-permit:hover {
-            background: #856404;
-            color: white;
-        }
-
-        /* MEJORAS RESPONSIVE */
+        /* CORRECCIÓN ESPECÍFICA PARA BOTONES EN MÓVIL */
         @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .control-panel {
+                padding: 15px;
+                margin-bottom: 15px;
+                gap: 15px;
+            }
+
+            .form-group {
+                min-width: 100%;
+            }
+
+            .search-box {
+                min-width: 100%;
+            }
+
+            .search-box-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .search-btn {
+                width: 100%;
+                margin-top: 5px;
+            }
+
+            .quick-actions {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .attendance-header {
+                padding: 15px;
+            }
+
+            .attendance-table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .attendance-table th,
+            .attendance-table td {
+                padding: 12px 8px;
+                font-size: 14px;
+            }
+
+            .action-buttons {
+                flex-direction: row !important;
+                gap: 4px;
+                overflow-x: auto;
+                padding: 5px 0;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                min-height: 45px;
+                align-items: center;
+            }
+
+            .btn-status {
+                padding: 8px 10px !important;
+                font-size: 11px !important;
+                min-width: 60px;
+                white-space: nowrap;
+                flex-shrink: 0;
+                height: 38px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+            }
+
+            /* Ocultar texto y mostrar solo iconos en móvil */
+            .btn-status span:not([class]) {
+                display: none;
+            }
+
+            .student-info {
+                min-width: 120px;
+            }
+
+            .footer-content {
+                gap: 12px;
+            }
+
+            .save-btn {
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+
+            .summary {
+                font-size: 13px;
+                line-height: 1.4;
+            }
+
             .recommended-class {
                 padding: 15px;
             }
@@ -720,6 +724,54 @@
             .recommended-actions .btn {
                 width: 100%;
                 justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .attendance-header h3 {
+                font-size: 1.1rem;
+            }
+
+            .btn {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .quick-actions {
+                flex-direction: column;
+            }
+
+            .quick-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .attendance-footer {
+                padding: 15px;
+            }
+
+            .save-btn {
+                padding: 14px 20px;
+                font-size: 15px;
+                max-width: 100%;
+            }
+
+            .summary {
+                font-size: 12px;
+            }
+
+            .action-buttons {
+                gap: 3px;
+            }
+
+            .btn-status {
+                min-width: 55px;
+                padding: 6px 8px !important;
+                font-size: 10px !important;
             }
         }
     </style>
@@ -767,7 +819,7 @@
                     <div class="search-input-container">
                         <i class="fas fa-search"></i>
                         <input type="text" id="student-search" class="form-control"
-                            placeholder="Escribe nombre o identificación...">
+                            placeholder="Nombre o identificación...">
                     </div>
                     <button class="btn btn-primary search-btn" id="search-btn">
                         🔍 Buscar

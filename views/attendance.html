@@ -518,57 +518,57 @@
             .container {
                 padding: 10px;
             }
-            
+
             .header {
                 padding: 15px;
                 margin-bottom: 15px;
             }
-            
+
             .control-panel {
                 padding: 15px;
                 margin-bottom: 15px;
                 gap: 15px;
             }
-            
+
             .form-group {
                 min-width: 100%;
             }
-            
+
             .search-box {
                 min-width: 100%;
             }
-            
+
             .quick-actions {
                 width: 100%;
                 justify-content: center;
             }
-            
+
             .attendance-header {
                 padding: 15px;
             }
-            
+
             .attendance-table {
                 display: block;
                 overflow-x: auto;
             }
-            
+
             .attendance-table th,
             .attendance-table td {
                 padding: 12px 8px;
                 font-size: 14px;
             }
-            
+
             .action-buttons {
                 flex-direction: column;
                 gap: 5px;
             }
-            
+
             .btn-status {
                 padding: 8px 10px;
                 font-size: 11px;
                 width: 100%;
             }
-            
+
             .student-info {
                 min-width: 120px;
             }
@@ -592,37 +592,134 @@
             .header h1 {
                 font-size: 1.5rem;
             }
-            
+
             .attendance-header h3 {
                 font-size: 1.1rem;
             }
-            
+
             .btn {
                 padding: 8px 15px;
                 font-size: 13px;
             }
-            
+
             .quick-actions {
                 flex-direction: column;
             }
-            
+
             .quick-actions .btn {
                 width: 100%;
                 justify-content: center;
             }
-            
+
             .attendance-footer {
                 padding: 15px;
             }
-            
+
             .save-btn {
                 padding: 14px 20px;
                 font-size: 15px;
                 max-width: 100%;
             }
-            
+
             .summary {
                 font-size: 12px;
+            }
+        }
+
+        /* NUEVOS ESTILOS PARA LAS MEJORAS */
+        .recommended-class {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .recommended-class h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+        }
+
+        .recommended-class p {
+            margin: 5px 0;
+            opacity: 0.9;
+        }
+
+        .recommended-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-recommended {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+        }
+
+        .btn-recommended:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .class-period {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+        /* NUEVO ESTADO - AUSENCIA CON PERMISO */
+        .status-permit {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .btn-permit {
+            color: #856404;
+            border-color: #ffeaa7;
+        }
+
+        .btn-permit:hover {
+            background: #856404;
+            color: white;
+        }
+
+        /* MEJORAS RESPONSIVE */
+        @media (max-width: 768px) {
+            .recommended-class {
+                padding: 15px;
+            }
+
+            .recommended-actions {
+                flex-direction: column;
+            }
+
+            .recommended-actions .btn {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
@@ -630,14 +727,25 @@
 
 <body>
     <div class="container">
-        <div class="nav-buttons">
+        <div class="navigation-buttons">
             <button class="btn btn-outline" onclick="window.location.href='../dashboard.html'">
                 ← Volver al Dashboard
+            </button>
+            <button class="btn btn-info" onclick="window.location.href='horario-clases.html'">
+                🕐 Configurar Horario
+            </button>
+            <button class="btn btn-info" onclick="window.location.href='ver-asistencias.html'">
+                📊 Ver Asistencias Guardadas
             </button>
         </div>
 
         <div class="header">
             <h1>📊 Registro de Asistencia</h1>
+        </div>
+
+        <!-- SECCIÓN DE CLASE RECOMENDADA -->
+        <div id="recommended-class-container" style="display: none;">
+            <!-- Se llenará dinámicamente con JavaScript -->
         </div>
 
         <div class="control-panel">
@@ -655,8 +763,19 @@
 
             <div class="form-group search-box">
                 <label for="student-search">Buscar Estudiante</label>
-                <input type="text" id="student-search" class="form-control"
-                    placeholder="Escribe nombre o identificación...">
+                <div class="search-box-container">
+                    <div class="search-input-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="student-search" class="form-control"
+                            placeholder="Escribe nombre o identificación...">
+                    </div>
+                    <button class="btn btn-primary search-btn" id="search-btn">
+                        🔍 Buscar
+                    </button>
+                    <button class="btn btn-secondary search-btn" id="clear-search" style="display: none;">
+                        ✕ Limpiar
+                    </button>
+                </div>
             </div>
 
             <div class="quick-actions">
@@ -668,6 +787,9 @@
                 </button>
                 <button class="btn btn-warning quick-action" data-action="all-late">
                     ⏰ Todos Tarde
+                </button>
+                <button class="btn btn-permit quick-action" data-action="all-permit">
+                    📝 Todos con Permiso
                 </button>
             </div>
         </div>
@@ -686,9 +808,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
-    <!-- CONFIGURACIÓN FIREBASE CON TUS DATOS REALES -->
+    <!-- CONFIGURACIÓN FIREBASE -->
     <script>
-        // TU CONFIGURACIÓN REAL
         const firebaseConfig = {
             apiKey: "AIzaSyAmqWjpS2bYaNtPA_LhYLMh5KuwOOmEk2Y",
             authDomain: "sistema-docente-informatica.firebaseapp.com",
@@ -698,7 +819,6 @@
             appId: "1:317682841841:web:e0022e870491b701365150"
         };
 
-        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         console.log('✅ Firebase inicializado correctamente');
     </script>

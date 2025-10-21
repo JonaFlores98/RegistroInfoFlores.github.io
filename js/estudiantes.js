@@ -24,7 +24,8 @@ class StudentsManager {
         const mobileMenu = document.getElementById('mobile-menu');
         const mobileOverlay = document.getElementById('mobile-menu-overlay');
         const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
-
+        
+        
         if (menuToggle && mobileMenu) {
             menuToggle.addEventListener('click', () => {
                 mobileMenu.classList.add('active');

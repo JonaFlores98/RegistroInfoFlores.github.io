@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,9 +9,17 @@
 </head>
 
 <body>
+    <!-- Botón hamburguesa para móviles -->
+    <button class="mobile-menu-btn" id="mobile-menu-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <!-- Overlay para móviles -->
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+
     <div class="container">
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h2>Sistema Docente</h2>
             </div>
@@ -38,6 +45,18 @@
 
             <!-- Dashboard Content -->
             <div class="content-area">
+                <!-- Selector de grado para filtrar -->
+                <div class="stats-filter">
+                    <label for="grade-filter">Ver estadísticas para:</label>
+                    <select id="grade-filter">
+                        <option value="all">Todos los grados</option>
+                        <option value="primero">1° Grado</option>
+                        <option value="segundo">2° Grado</option>
+                        <option value="tercero">3° Grado</option>
+                        <!-- Agrega más opciones según tus grados -->
+                    </select>
+                </div>
+
                 <h2>Resumen General</h2>
 
                 <div class="dashboard-cards">
@@ -50,11 +69,13 @@
                         <i class="fas fa-clipboard-check"></i>
                         <h3>Asistencia Hoy</h3>
                         <p id="attendance-today">0% de presencia</p>
+                        <div id="attendance-breakdown"></div>
                     </div>
                     <div class="card">
                         <i class="fas fa-graduation-cap"></i>
                         <h3>Promedio General</h3>
                         <p id="average-grade">0 / 10</p>
+                        <div id="grades-breakdown"></div>
                     </div>
                     <div class="card">
                         <i class="fas fa-book"></i>
@@ -92,6 +113,30 @@
     <script src="js/firebase-config.js"></script>
     <!-- Lógica del dashboard -->
     <script src="js/dashboard.js"></script>
-</body>
 
+    <script>
+        // Navegación móvil
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+                document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+            }
+
+            mobileMenuBtn.addEventListener('click', toggleSidebar);
+            overlay.addEventListener('click', toggleSidebar);
+
+            // Cerrar sidebar al hacer clic en un enlace (en móviles)
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                    link.addEventListener('click', toggleSidebar);
+                });
+            }
+        });
+    </script>
+</body>
 </html>

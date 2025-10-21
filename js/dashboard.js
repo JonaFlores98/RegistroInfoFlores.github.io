@@ -8,6 +8,7 @@ class DashboardManager {
         this.selectedGrade = 'all'; // Filtro por grado
         this.init();
     }
+
     navigateToAttendance() {
         window.location.href = 'attendance.html';
     }
@@ -37,6 +38,15 @@ class DashboardManager {
                 this.handleLogout();
             });
         }
+
+        // Selector de grado para filtrar estadísticas
+        const gradeFilter = document.getElementById('grade-filter');
+        if (gradeFilter) {
+            gradeFilter.addEventListener('change', (e) => {
+                this.selectedGrade = e.target.value;
+                this.refreshAllStats();
+            });
+        }
     }
 
     async loadUserInfo(user) {
@@ -61,35 +71,75 @@ class DashboardManager {
 
     async loadRealTimeData() {
         // Cargar datos en tiempo real
+        await this.loadAvailableGrades(); // ⭐ NUEVO: Cargar grados primero
         await this.loadStudentsStats();
         await this.loadAttendanceStats();
-        await this.loadGradeStats(); // Nuevo método para estadísticas por grado
+        await this.loadGradeStats();
         await this.loadRecentActivity();
 
         // Escuchar cambios en tiempo real
         this.setupRealTimeListeners();
     }
 
-    addEventListeners() {
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.handleLogout();
-            });
-        }
+    // ⭐ NUEVO: Cargar grados disponibles desde Firebase
+    async loadAvailableGrades() {
+        try {
+            const studentsSnapshot = await this.db.collection('estudiantes')
+                .where('profesorId', '==', this.currentUser.uid)
+                .get();
 
-        // ⭐ NUEVO: Selector de grado para filtrar estadísticas
-        const gradeFilter = document.getElementById('grade-filter');
-        if (gradeFilter) {
-            gradeFilter.addEventListener('change', (e) => {
-                this.selectedGrade = e.target.value;
-                this.refreshAllStats();
+            const grades = new Set();
+            
+            studentsSnapshot.forEach(doc => {
+                const student = doc.data();
+                if (student.grado) {
+                    grades.add(student.grado);
+                }
             });
+
+            this.populateGradeFilter(Array.from(grades));
+            
+        } catch (error) {
+            console.error('Error cargando grados disponibles:', error);
         }
     }
 
-    // ⭐ NUEVO: Refrescar todas las estadísticas
+    // ⭐ NUEVO: Poblar el filtro de grados
+    populateGradeFilter(grades) {
+        const gradeFilter = document.getElementById('grade-filter');
+        if (!gradeFilter) return;
+
+        // Ordenar grados de manera lógica
+        const sortedGrades = this.sortGrades(grades);
+        
+        gradeFilter.innerHTML = '<option value="all">Todos los grados</option>';
+        
+        sortedGrades.forEach(grade => {
+            const option = document.createElement('option');
+            option.value = grade;
+            option.textContent = this.getGradeDisplayName(grade);
+            gradeFilter.appendChild(option);
+        });
+
+        console.log('Filtro de grados poblado con:', sortedGrades);
+    }
+
+    // ⭐ NUEVO: Ordenar grados
+    sortGrades(grades) {
+        const gradeOrder = {
+            'kinder4': 1, 'kinder5': 2, 'kinder6': 3,
+            'primero': 4, 'segundo': 5, 'tercero': 6,
+            'cuarto': 7, 'quinto': 8, 'sexto': 9,
+            'septimo': 10, 'octavo': 11, 'noveno': 12,
+            'primero-bach': 13, 'segundo-bach': 14
+        };
+        
+        return grades.sort((a, b) => {
+            return (gradeOrder[a] || 99) - (gradeOrder[b] || 99);
+        });
+    }
+
+    // Refrescar todas las estadísticas
     async refreshAllStats() {
         await this.loadStudentsStats();
         await this.loadAttendanceStats();
@@ -107,7 +157,6 @@ class DashboardManager {
             }
 
             const studentsSnapshot = await studentsQuery.get();
-
             const totalStudents = studentsSnapshot.size;
 
             // Contar estudiantes por grado (solo si no hay filtro aplicado)
@@ -123,10 +172,22 @@ class DashboardManager {
             const activeClasses = this.selectedGrade === 'all' ?
                 Object.keys(studentsByGrade).length : 1;
 
-            // Actualizar UI
-            document.getElementById('total-students').textContent = totalStudents;
-            document.getElementById('active-classes').textContent =
-                activeClasses + ' grupo' + (activeClasses !== 1 ? 's' : '');
+            // Actualizar UI con información más descriptiva
+            const studentsElement = document.getElementById('total-students');
+            const classesElement = document.getElementById('active-classes');
+            
+            studentsElement.textContent = totalStudents;
+            
+            if (this.selectedGrade === 'all') {
+                classesElement.textContent = `${activeClasses} grupo${activeClasses !== 1 ? 's' : ''}`;
+                if (Object.keys(studentsByGrade).length > 0) {
+                    classesElement.title = `Grados con estudiantes: ${Object.keys(studentsByGrade).map(g => this.getGradeDisplayName(g)).join(', ')}`;
+                }
+            } else {
+                const gradeName = this.getGradeDisplayName(this.selectedGrade);
+                classesElement.textContent = gradeName;
+                classesElement.title = `${totalStudents} estudiantes en ${gradeName}`;
+            }
 
         } catch (error) {
             console.error('Error cargando estadísticas de estudiantes:', error);
@@ -188,7 +249,7 @@ class DashboardManager {
                 attendanceElement.title = `${gradeName}: ${totalPresent}/${totalStudents} estudiantes`;
             }
 
-            // ⭐ NUEVO: Mostrar desglose por grados si es vista general
+            // Mostrar desglose por grados si es vista general
             this.updateAttendanceBreakdown(attendanceByGrade);
 
         } catch (error) {
@@ -197,7 +258,7 @@ class DashboardManager {
         }
     }
 
-    // ⭐ NUEVO: Método para estadísticas de calificaciones por grado
+    // Método para estadísticas de calificaciones por grado
     async loadGradeStats() {
         try {
             let gradesQuery = this.db.collection('calificaciones')
@@ -212,7 +273,6 @@ class DashboardManager {
 
             let totalGrades = 0;
             let gradeCount = 0;
-            let gradesBySubject = {};
             let gradesByGrade = {};
 
             gradesSnapshot.forEach(doc => {
@@ -221,14 +281,6 @@ class DashboardManager {
                     const gradeValue = gradeData.calificacion;
                     totalGrades += gradeValue;
                     gradeCount++;
-
-                    // Estadísticas por materia
-                    const subject = gradeData.materia || 'Sin materia';
-                    if (!gradesBySubject[subject]) {
-                        gradesBySubject[subject] = { total: 0, count: 0 };
-                    }
-                    gradesBySubject[subject].total += gradeValue;
-                    gradesBySubject[subject].count++;
 
                     // Estadísticas por grado
                     const gradeLevel = gradeData.grado;
@@ -253,8 +305,8 @@ class DashboardManager {
                 gradeElement.title = `${gradeName}: ${gradeCount} calificaciones`;
             }
 
-            // ⭐ NUEVO: Mostrar desglose de calificaciones
-            this.updateGradesBreakdown(gradesBySubject, gradesByGrade);
+            // Mostrar desglose de calificaciones
+            this.updateGradesBreakdown(gradesByGrade);
 
         } catch (error) {
             console.error('Error cargando estadísticas de calificaciones:', error);
@@ -262,7 +314,7 @@ class DashboardManager {
         }
     }
 
-    // ⭐ NUEVO: Actualizar desglose de asistencia
+    // Actualizar desglose de asistencia
     updateAttendanceBreakdown(attendanceByGrade) {
         const breakdownElement = document.getElementById('attendance-breakdown');
         if (!breakdownElement) return;
@@ -293,8 +345,8 @@ class DashboardManager {
         }
     }
 
-    // ⭐ NUEVO: Actualizar desglose de calificaciones
-    updateGradesBreakdown(gradesBySubject, gradesByGrade) {
+    // Actualizar desglose de calificaciones
+    updateGradesBreakdown(gradesByGrade) {
         const breakdownElement = document.getElementById('grades-breakdown');
         if (!breakdownElement) return;
 
@@ -321,96 +373,6 @@ class DashboardManager {
             breakdownElement.style.display = 'block';
         } else {
             breakdownElement.style.display = 'none';
-        }
-    }
-
-    async loadStudentsStats() {
-        try {
-            const studentsSnapshot = await this.db.collection('estudiantes')
-                .where('profesorId', '==', this.currentUser.uid)
-                .get();
-
-            const totalStudents = studentsSnapshot.size;
-
-            // Contar estudiantes por grado
-            const studentsByGrade = {};
-            studentsSnapshot.forEach(doc => {
-                const student = doc.data();
-                const grade = student.grado;
-                studentsByGrade[grade] = (studentsByGrade[grade] || 0) + 1;
-            });
-
-            const activeClasses = Object.keys(studentsByGrade).length;
-
-            // Actualizar UI
-            document.getElementById('total-students').textContent = totalStudents;
-            document.getElementById('active-classes').textContent = activeClasses + ' grupo' + (activeClasses !== 1 ? 's' : '');
-
-        } catch (error) {
-            console.error('Error cargando estadísticas de estudiantes:', error);
-            document.getElementById('total-students').textContent = '0';
-            document.getElementById('active-classes').textContent = '0 grupos';
-        }
-    }
-
-    async loadAttendanceStats() {
-        try {
-            const today = new Date().toISOString().split('T')[0];
-
-            // Buscar asistencias de hoy
-            const attendanceSnapshot = await this.db.collection('asistencias')
-                .where('profesorId', '==', this.currentUser.uid)
-                .where('fecha', '==', today)
-                .get();
-
-            let totalPresent = 0;
-            let totalStudents = 0;
-            let averageGrade = 0;
-
-            if (!attendanceSnapshot.empty) {
-                // Calcular asistencia de hoy
-                attendanceSnapshot.forEach(doc => {
-                    const attendance = doc.data();
-                    const students = attendance.estudiantes || [];
-
-                    totalStudents += students.length;
-                    totalPresent += students.filter(s => s.estado === 'presente').length;
-                });
-
-                // Calcular promedio general (esto sería de calificaciones)
-                const gradesSnapshot = await this.db.collection('calificaciones')
-                    .where('profesorId', '==', this.currentUser.uid)
-                    .limit(100)
-                    .get();
-
-                let totalGrades = 0;
-                let gradeCount = 0;
-
-                gradesSnapshot.forEach(doc => {
-                    const gradeData = doc.data();
-                    if (gradeData.calificacion) {
-                        totalGrades += gradeData.calificacion;
-                        gradeCount++;
-                    }
-                });
-
-                averageGrade = gradeCount > 0 ? (totalGrades / gradeCount).toFixed(1) : 0;
-            }
-
-            // Calcular porcentaje de asistencia
-            const attendancePercentage = totalStudents > 0 ?
-                Math.round((totalPresent / totalStudents) * 100) : 0;
-
-            // Actualizar UI
-            document.getElementById('attendance-today').textContent =
-                attendancePercentage + '% de presencia';
-            document.getElementById('average-grade').textContent =
-                averageGrade + ' / 10';
-
-        } catch (error) {
-            console.error('Error cargando estadísticas de asistencia:', error);
-            document.getElementById('attendance-today').textContent = '0% de presencia';
-            document.getElementById('average-grade').textContent = '0 / 10';
         }
     }
 
@@ -442,13 +404,11 @@ class DashboardManager {
                 });
             }
 
-            // ⭐ CAMBIO CLAVE: Si no hay actividades reales, NO mostrar nada falso
             // Solo actualizar si hay actividades reales
             this.updateRecentActivity(activities);
 
         } catch (error) {
             console.error('Error cargando actividad reciente:', error);
-            // ⭐ CAMBIO CLAVE: En caso de error, mostrar array vacío en lugar de actividades falsas
             this.updateRecentActivity([]);
         }
     }
@@ -458,6 +418,7 @@ class DashboardManager {
         this.db.collection('estudiantes')
             .where('profesorId', '==', this.currentUser.uid)
             .onSnapshot(() => {
+                this.loadAvailableGrades(); // ⭐ ACTUALIZAR GRADOS CUANDO CAMBIEN ESTUDIANTES
                 this.loadStudentsStats();
             });
 
@@ -468,23 +429,37 @@ class DashboardManager {
                 this.loadAttendanceStats();
                 this.loadRecentActivity();
             });
+
+        // Escuchar nuevas calificaciones en tiempo real
+        this.db.collection('calificaciones')
+            .where('profesorId', '==', this.currentUser.uid)
+            .onSnapshot(() => {
+                this.loadGradeStats();
+            });
     }
 
     updateRecentActivity(activities) {
         const tbody = document.querySelector('#recent-activity tbody');
-        if (tbody) {
-            tbody.innerHTML = activities.map(item => `
-                <tr>
-                    <td>${item.date}</td>
-                    <td>${item.class}</td>
-                    <td>${item.activity}</td>
-                    <td>
-                        <span class="badge badge-${item.status === 'completed' ? 'presente' : 'ausente'}">
-                            ${item.status === 'completed' ? 'Completado' : 'Pendiente'}
-                        </span>
-                    </td>
-                </tr>
-            `).join('');
+        const tableContainer = document.querySelector('#recent-activity');
+        
+        if (tbody && tableContainer) {
+            if (activities.length === 0) {
+                tableContainer.style.display = 'none';
+            } else {
+                tableContainer.style.display = 'table';
+                tbody.innerHTML = activities.map(item => `
+                    <tr>
+                        <td>${item.date}</td>
+                        <td>${item.class}</td>
+                        <td>${item.activity}</td>
+                        <td>
+                            <span class="badge badge-${item.status === 'completed' ? 'presente' : 'ausente'}">
+                                ${item.status === 'completed' ? 'Completado' : 'Pendiente'}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+            }
         }
     }
 
@@ -516,31 +491,6 @@ class DashboardManager {
         };
 
         return gradesMap[gradeKey] || gradeKey;
-    }
-
-    getRandomGrade() {
-        if (!this.userData || !this.userData.grades) return '2° Grado';
-
-        const gradesMap = {
-            'kinder4': 'Kinder 4',
-            'kinder5': 'Kinder 5',
-            'kinder6': 'Kinder 6',
-            'primero': '1° Grado',
-            'segundo': '2° Grado',
-            'tercero': '3° Grado',
-            'cuarto': '4° Grado',
-            'quinto': '5° Grado',
-            'sexto': '6° Grado',
-            'septimo': '7° Grado',
-            'octavo': '8° Grado',
-            'noveno': '9° Grado',
-            'primero-bach': '1° Bachillerato',
-            'segundo-bach': '2° Bachillerato'
-        };
-
-        const randomIndex = Math.floor(Math.random() * this.userData.grades.length);
-        const gradeKey = this.userData.grades[randomIndex];
-        return gradesMap[gradeKey] || '2° Grado';
     }
 
     handleLogout() {

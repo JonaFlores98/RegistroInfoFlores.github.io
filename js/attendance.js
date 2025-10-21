@@ -246,7 +246,6 @@ class AttendanceManager {
         <div class="attendance-container">
             <div class="attendance-header">
                 <h3>📋 Lista de Asistencia - ${this.getGradeDisplayName(this.selectedGrade)}</h3>
-                <!-- QUITAMOS LOS BOTONES DE ACCIÓN RÁPIDA DE AQUÍ -->
             </div>
             <div class="attendance-table-container">
                 <table class="attendance-table">
@@ -299,11 +298,13 @@ class AttendanceManager {
                 </table>
             </div>
             <div class="attendance-footer">
-                <button id="save-attendance" class="btn btn-primary">
-                    💾 Guardar Asistencia
-                </button>
-                <div class="summary" id="attendance-summary">
-                    ${this.getSummaryText()}
+                <div class="footer-content">
+                    <button id="save-attendance" class="btn btn-primary save-btn">
+                        💾 Guardar Asistencia
+                    </button>
+                    <div class="summary" id="attendance-summary">
+                        ${this.getSummaryText()}
+                    </div>
                 </div>
             </div>
         </div>

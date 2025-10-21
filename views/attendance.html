@@ -443,19 +443,45 @@
             color: white;
         }
 
+        /* MEJORAS PARA MÓVIL - BOTÓN GUARDAR SEPARADO */
         .attendance-footer {
             padding: 20px;
             background: #f8f9fa;
             border-top: 1px solid #eee;
+        }
+
+        .footer-content {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 15px;
             align-items: center;
+        }
+
+        .save-btn {
+            width: 100%;
+            max-width: 300px;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .save-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .save-btn:active {
+            transform: translateY(-1px);
         }
 
         .summary {
             font-weight: 600;
             color: #2c3e50;
             font-size: 14px;
+            text-align: center;
+            width: 100%;
         }
 
         .no-data {
@@ -485,6 +511,119 @@
         .btn-outline:hover {
             background: #3498db;
             color: white;
+        }
+
+        /* RESPONSIVE PARA TABLETS Y MÓVILES */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+            
+            .control-panel {
+                padding: 15px;
+                margin-bottom: 15px;
+                gap: 15px;
+            }
+            
+            .form-group {
+                min-width: 100%;
+            }
+            
+            .search-box {
+                min-width: 100%;
+            }
+            
+            .quick-actions {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .attendance-header {
+                padding: 15px;
+            }
+            
+            .attendance-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .attendance-table th,
+            .attendance-table td {
+                padding: 12px 8px;
+                font-size: 14px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .btn-status {
+                padding: 8px 10px;
+                font-size: 11px;
+                width: 100%;
+            }
+            
+            .student-info {
+                min-width: 120px;
+            }
+
+            .footer-content {
+                gap: 12px;
+            }
+
+            .save-btn {
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+
+            .summary {
+                font-size: 13px;
+                line-height: 1.4;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .attendance-header h3 {
+                font-size: 1.1rem;
+            }
+            
+            .btn {
+                padding: 8px 15px;
+                font-size: 13px;
+            }
+            
+            .quick-actions {
+                flex-direction: column;
+            }
+            
+            .quick-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .attendance-footer {
+                padding: 15px;
+            }
+            
+            .save-btn {
+                padding: 14px 20px;
+                font-size: 15px;
+                max-width: 100%;
+            }
+            
+            .summary {
+                font-size: 12px;
+            }
         }
     </style>
 </head>

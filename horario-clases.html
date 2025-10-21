@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar Horario - Sistema Escolar</title>
+    <style>
+        /* ESTILOS BASE (similares a attendance.html) */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-outline {
+            background: white;
+            color: #3498db;
+            border: 2px solid #3498db;
+        }
+
+        .btn-outline:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ESTILOS ESPECÍFICOS PARA HORARIO */
+        .schedule-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .schedule-header {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+        }
+
+        .schedule-header h3 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .schedule-info {
+            padding: 20px;
+            background: #e8f4f8;
+            border-bottom: 1px solid #d1ecf1;
+        }
+
+        .schedule-info p {
+            margin: 0;
+            color: #0c5460;
+            font-size: 14px;
+        }
+
+        .periods-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .period-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+
+        .period-card:hover {
+            border-color: #3498db;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
+        }
+
+        .period-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .period-time {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+
+        .period-name {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .day-schedule {
+            margin-bottom: 15px;
+        }
+
+        .day-header {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .grade-selector {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .grade-selector:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .no-class {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        .schedule-actions {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            max-width: 400px;
+            line-height: 1.5;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* HORARIO FIJADO */
+        .periods-fixed {
+            display: grid;
+            grid-template-columns: 120px repeat(9, 1fr);
+            gap: 1px;
+            background: #dee2e6;
+            border: 1px solid #dee2e6;
+            margin: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .time-slot {
+            background: #34495e;
+            color: white;
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .day-column {
+            background: #f8f9fa;
+        }
+
+        .day-header-cell {
+            background: #495057;
+            color: white;
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .class-cell {
+            background: white;
+            padding: 10px;
+            min-height: 80px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .class-assigned {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .class-empty {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 11px;
+            text-align: center;
+            padding: 10px 5px;
+        }
+
+        /* NOTIFICACIONES */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 400px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #27ae60;
+        }
+
+        .notification.error {
+            background: #e74c3c;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .periods-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 15px;
+            }
+
+            .periods-fixed {
+                grid-template-columns: 80px repeat(5, 1fr);
+                overflow-x: auto;
+            }
+
+            .time-slot, .day-header-cell {
+                padding: 10px 5px;
+                font-size: 10px;
+            }
+
+            .class-cell {
+                min-height: 60px;
+                padding: 5px;
+            }
+
+            .schedule-actions {
+                flex-direction: column;
+            }
+
+            .schedule-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .periods-fixed {
+                grid-template-columns: 70px repeat(5, 1fr);
+                font-size: 10px;
+            }
+
+            .time-slot, .day-header-cell {
+                padding: 8px 3px;
+                font-size: 9px;
+            }
+
+            .class-assigned {
+                font-size: 10px;
+                padding: 5px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="nav-buttons">
+            <button class="btn btn-outline" onclick="window.location.href='../dashboard.html'">
+                ← Volver al Dashboard
+            </button>
+            <button class="btn btn-outline" onclick="window.location.href='attendance.html'">
+                📊 Tomar Asistencia
+            </button>
+            <button class="btn btn-outline" onclick="window.location.href='ver-asistencias.html'">
+                📋 Ver Asistencias
+            </button>
+        </div>
+
+        <div class="header">
+            <h1>🕐 Configurar Horario de Clases</h1>
+        </div>
+
+        <div class="schedule-container">
+            <div class="schedule-header">
+                <h3>📅 Mi Horario Semanal</h3>
+            </div>
+
+            <div class="schedule-info">
+                <p><strong>💡 Información:</strong> Configura tu horario semanal. Selecciona el grado que impartes en cada período. Los horarios están predefinidos según el sistema escolar.</p>
+            </div>
+
+            <!-- VISTA DE HORARIO FIJADO (Tabla) -->
+            <div class="periods-fixed">
+                <!-- Fila de horas -->
+                <div class="time-slot">Hora</div>
+                <div class="day-header-cell">Lunes</div>
+                <div class="day-header-cell">Martes</div>
+                <div class="day-header-cell">Miércoles</div>
+                <div class="day-header-cell">Jueves</div>
+                <div class="day-header-cell">Viernes</div>
+
+                <!-- Períodos -->
+                <div class="time-slot">7:00 - 7:45<br><small>1° Clase</small></div>
+                <div class="class-cell" data-day="lunes" data-period="1" id="cell-lunes-1"></div>
+                <div class="class-cell" data-day="martes" data-period="1" id="cell-martes-1"></div>
+                <div class="class-cell" data-day="miercoles" data-period="1" id="cell-miercoles-1"></div>
+                <div class="class-cell" data-day="jueves" data-period="1" id="cell-jueves-1"></div>
+                <div class="class-cell" data-day="viernes" data-period="1" id="cell-viernes-1"></div>
+
+                <div class="time-slot">7:45 - 8:30<br><small>2° Clase</small></div>
+                <div class="class-cell" data-day="lunes" data-period="2" id="cell-lunes-2"></div>
+                <div class="class-cell" data-day="martes" data-period="2" id="cell-martes-2"></div>
+                <div class="class-cell" data-day="miercoles" data-period="2" id="cell-miercoles-2"></div>
+                <div class="class-cell" data-day="jueves" data-period="2" id="cell-jueves-2"></div>
+                <div class="class-cell" data-day="viernes" data-period="2" id="cell-viernes-2"></div>
+
+                <div class="time-slot">8:50 - 9:35<br><small>3° Clase</small></div>
+                <div class="class-cell" data-day="lunes" data-period="3" id="cell-lunes-3"></div>
+                <div class="class-cell" data-day="martes" data-period="3" id="cell-martes-3"></div>
+                <div class="class-cell" data-day="miercoles" data-period="3" id="cell-miercoles-3"></div>
+                <div class="class-cell" data-day="jueves" data-period="3" id="cell-jueves-3"></div>
+                <div class="class-cell" data-day="viernes" data-period="3" id="cell-viernes-3"></div>
+
+                <div class="time-slot">9:35 - 10:20<br><small>4° Clase</small></div>
+                <div class="class-cell" data-day="lunes" data-period="4" id="cell-lunes-4"></div>
+                <div class="class-cell" data-day="martes" data-period="4" id="cell-martes-4"></div>
+                <div class="class-cell" data-day="miercoles" data-period="4" id="cell-miercoles-4"></div>
+                <div class="class-cell" data-day="jueves" data-period="4" id="cell-jueves-4"></div>
+                <div class="class-cell" data-day="viernes" data-period="4" id="cell-viernes-4"></div>
+
+                <div class="time-slot">10:30 - 11:15<br><small>5° Clase</small></div>
+                <div class="class-cell" data-day="lunes" data-period="5" id="cell-lunes-5"></div>
+                <div class="class-cell" data-day="martes" data-period="5" id="cell-martes-5"></div>
+                <div class="class-cell" data-day="miercoles" data-period="5" id="cell-miercoles-5"></div>
+                <div class="class-cell" data-day="jueves" data-period="5" id="cell-jueves-5"></div>
+                <div class="class-cell" data-day="viernes" data-period="5" id="cell-viernes-5"></div>
+
+                <div class="time-slot">11:15 - 12:00<br><small>6° Clase</small></div>
+                <div class="class-cell" data-day="lunes" data-period="6" id="cell-lunes-6"></div>
+                <div class="class-cell" data-day="martes" data-period="6" id="cell-martes-6"></div>
+                <div class="class-cell" data-day="miercoles" data-period="6" id="cell-miercoles-6"></div>
+                <div class="class-cell" data-day="jueves" data-period="6" id="cell-jueves-6"></div>
+                <div class="class-cell" data-day="viernes" data-period="6" id="cell-viernes-6"></div>
+
+                <div class="time-slot">12:30 - 13:15<br><small>7° Clase</small></div>
+                <div class="class-cell" data-day="lunes" data-period="7" id="cell-lunes-7"></div>
+                <div class="class-cell" data-day="martes" data-period="7" id="cell-martes-7"></div>
+                <div class="class-cell" data-day="miercoles" data-period="7" id="cell-miercoles-7"></div>
+                <div class="class-cell" data-day="jueves" data-period="7" id="cell-jueves-7"></div>
+                <div class="class-cell" data-day="viernes" data-period="7" id="cell-viernes-7"></div>
+
+                <div class="time-slot">13:15 - 14:00<br><small>8° Clase</small></div>
+                <div class="class-cell" data-day="lunes" data-period="8" id="cell-lunes-8"></div>
+                <div class="class-cell" data-day="martes" data-period="8" id="cell-martes-8"></div>
+                <div class="class-cell" data-day="miercoles" data-period="8" id="cell-miercoles-8"></div>
+                <div class="class-cell" data-day="jueves" data-period="8" id="cell-jueves-8"></div>
+                <div class="class-cell" data-day="viernes" data-period="8" id="cell-viernes-8"></div>
+
+                <div class="time-slot">14:00 - 14:45<br><small>9° Clase</small></div>
+                <div class="class-cell" data-day="lunes" data-period="9" id="cell-lunes-9"></div>
+                <div class="class-cell" data-day="martes" data-period="9" id="cell-martes-9"></div>
+                <div class="class-cell" data-day="miercoles" data-period="9" id="cell-miercoles-9"></div>
+                <div class="class-cell" data-day="jueves" data-period="9" id="cell-jueves-9"></div>
+                <div class="class-cell" data-day="viernes" data-period="9" id="cell-viernes-9"></div>
+            </div>
+
+            <div class="schedule-actions">
+                <button class="btn btn-success" id="save-schedule">
+                    💾 Guardar Horario
+                </button>
+                <button class="btn btn-outline" id="clear-schedule">
+                    🗑️ Limpiar Todo
+                </button>
+            </div>
+        </div>
+
+        <div id="no-grades-message" class="empty-state" style="display: none;">
+            <i class="fas fa-users"></i>
+            <h3>No tienes grados asignados</h3>
+            <p>Primero necesitas tener estudiantes registrados en algún grado para configurar el horario.</p>
+            <button class="btn btn-primary" onclick="window.location.href='../dashboard.html'">
+                ← Volver al Dashboard
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <!-- Configuración Firebase -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmqWjpS2bYaNtPA_LhYLMh5KuwOOmEk2Y",
+            authDomain: "sistema-docente-informatica.firebaseapp.com",
+            projectId: "sistema-docente-informatica",
+            storageBucket: "sistema-docente-informatica.firebasestorage.app",
+            messagingSenderId: "317682841841",
+            appId: "1:317682841841:web:e0022e870491b701365150"
+        };
+        firebase.initializeApp(firebaseConfig);
+    </script>
+
+    <!-- JavaScript para horario -->
+    <script>
+        class ScheduleManager {
+            constructor() {
+                this.db = firebase.firestore();
+                this.auth = firebase.auth();
+                this.currentUser = null;
+                this.schedule = {};
+                this.availableGrades = [];
+                this.init();
+            }
+
+            async init() {
+                try {
+                    this.currentUser = await this.getCurrentUser();
+                    if (!this.currentUser) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+
+                    await this.loadAvailableGrades();
+                    await this.loadSchedule();
+                    this.setupEventListeners();
+                    this.renderSchedule();
+
+                } catch (error) {
+                    console.error('Error en init:', error);
+                }
+            }
+
+            getCurrentUser() {
+                return new Promise((resolve) => {
+                    const unsubscribe = this.auth.onAuthStateChanged((user) => {
+                        unsubscribe();
+                        resolve(user);
+                    });
+                });
+            }
+
+            async loadAvailableGrades() {
+                try {
+                    const studentsSnapshot = await this.db.collection('estudiantes')
+                        .where('profesorId', '==', this.currentUser.uid)
+                        .get();
+
+                    const grades = new Set();
+                    studentsSnapshot.forEach(doc => {
+                        const studentData = doc.data();
+                        if (studentData.grado) {
+                            grades.add(studentData.grado);
+                        }
+                    });
+
+                    this.availableGrades = Array.from(grades).sort();
+
+                    if (this.availableGrades.length === 0) {
+                        document.getElementById('no-grades-message').style.display = 'block';
+                        document.querySelector('.schedule-container').style.display = 'none';
+                    }
+
+                } catch (error) {
+                    console.error('Error cargando grados:', error);
+                }
+            }
+
+            async loadSchedule() {
+                try {
+                    const scheduleSnapshot = await this.db.collection('horarios')
+                        .where('profesorId', '==', this.currentUser.uid)
+                        .get();
+
+                    this.schedule = {};
+                    scheduleSnapshot.forEach(doc => {
+                        const scheduleData = doc.data();
+                        const key = `${scheduleData.dia}-${scheduleData.periodo}`;
+                        this.schedule[key] = {
+                            id: doc.id,
+                            grado: scheduleData.grado
+                        };
+                    });
+
+                } catch (error) {
+                    console.log('No se encontró horario guardado');
+                }
+            }
+
+            setupEventListeners() {
+                // Delegación de eventos para las celdas
+                document.querySelector('.periods-fixed').addEventListener('click', (e) => {
+                    const cell = e.target.closest('.class-cell');
+                    if (cell) {
+                        this.showGradeSelector(cell);
+                    }
+                });
+
+                document.getElementById('save-schedule').addEventListener('click', () => this.saveSchedule());
+                document.getElementById('clear-schedule').addEventListener('click', () => this.clearSchedule());
+            }
+
+            showGradeSelector(cell) {
+                const day = cell.dataset.day;
+                const period = cell.dataset.period;
+                const currentGrade = this.schedule[`${day}-${period}`]?.grado || '';
+
+                const selectHtml = `
+                    <select class="grade-selector" onchange="scheduleManager.setGrade('${day}', ${period}, this.value)">
+                        <option value="">-- Sin clase --</option>
+                        ${this.availableGrades.map(grade => `
+                            <option value="${grade}" ${grade === currentGrade ? 'selected' : ''}>
+                                ${this.getGradeDisplayName(grade)}
+                            </option>
+                        `).join('')}
+                    </select>
+                `;
+
+                cell.innerHTML = selectHtml;
+                cell.querySelector('select').focus();
+            }
+
+            setGrade(day, period, grade) {
+                const key = `${day}-${period}`;
+                
+                if (grade) {
+                    this.schedule[key] = { grado: grade };
+                } else {
+                    delete this.schedule[key];
+                }
+
+                this.renderCell(day, period);
+            }
+
+            renderSchedule() {
+                const days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
+                const periods = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+                days.forEach(day => {
+                    periods.forEach(period => {
+                        this.renderCell(day, period);
+                    });
+                });
+            }
+
+            renderCell(day, period) {
+                const cell = document.getElementById(`cell-${day}-${period}`);
+                const scheduleItem = this.schedule[`${day}-${period}`];
+
+                if (scheduleItem && scheduleItem.grado) {
+                    cell.innerHTML = `
+                        <div class="class-assigned">
+                            <strong>${this.getGradeDisplayName(scheduleItem.grado)}</strong>
+                        </div>
+                    `;
+                } else {
+                    cell.innerHTML = `
+                        <div class="class-empty">
+                            <small>+ Agregar clase</small>
+                        </div>
+                    `;
+                }
+            }
+
+            async saveSchedule() {
+                try {
+                    // Primero eliminar horario existente
+                    const existingSchedule = await this.db.collection('horarios')
+                        .where('profesorId', '==', this.currentUser.uid)
+                        .get();
+
+                    const deletePromises = [];
+                    existingSchedule.forEach(doc => {
+                        deletePromises.push(doc.ref.delete());
+                    });
+
+                    await Promise.all(deletePromises);
+
+                    // Guardar nuevo horario
+                    const savePromises = [];
+                    Object.keys(this.schedule).forEach(key => {
+                        const [day, period] = key.split('-');
+                        const scheduleData = {
+                            profesorId: this.currentUser.uid,
+                            dia: day,
+                            periodo: parseInt(period),
+                            grado: this.schedule[key].grado,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+                        savePromises.push(this.db.collection('horarios').add(scheduleData));
+                    });
+
+                    await Promise.all(savePromises);
+                    this.showNotification('Horario guardado correctamente', 'success');
+
+                } catch (error) {
+                    console.error('Error guardando horario:', error);
+                    this.showNotification('Error al guardar el horario', 'error');
+                }
+            }
+
+            async clearSchedule() {
+                if (confirm('¿Estás seguro de que quieres limpiar todo el horario? Esta acción no se puede deshacer.')) {
+                    try {
+                        const existingSchedule = await this.db.collection('horarios')
+                            .where('profesorId', '==', this.currentUser.uid)
+                            .get();
+
+                        const deletePromises = [];
+                        existingSchedule.forEach(doc => {
+                            deletePromises.push(doc.ref.delete());
+                        });
+
+                        await Promise.all(deletePromises);
+                        
+                        this.schedule = {};
+                        this.renderSchedule();
+                        this.showNotification('Horario limpiado correctamente', 'success');
+
+                    } catch (error) {
+                        console.error('Error limpiando horario:', error);
+                        this.showNotification('Error al limpiar el horario', 'error');
+                    }
+                }
+            }
+
+            getGradeDisplayName(grade) {
+                const gradesMap = {
+                    'kinder4': 'Kinder 4', 'kinder5': 'Kinder 5', 'kinder6': 'Kinder 6',
+                    'primero': '1° Grado', 'segundo': '2° Grado', 'tercero': '3° Grado',
+                    'cuarto': '4° Grado', 'quinto': '5° Grado', 'sexto': '6° Grado',
+                    'septimo': '7° Grado', 'octavo': '8° Grado', 'noveno': '9° Grado',
+                    'primero-bach': '1° Bachillerato', 'segundo-bach': '2° Bachillerato'
+                };
+                return gradesMap[grade] || grade;
+            }
+
+            showNotification(message, type) {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.innerHTML = `
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.remove()">×</button>
+                `;
+
+                document.body.appendChild(notification);
+                setTimeout(() => notification.classList.add('show'), 100);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+        }
+
+        // Inicializar cuando el DOM esté listo
+        let scheduleManager;
+        document.addEventListener('DOMContentLoaded', () => {
+            scheduleManager = new ScheduleManager();
+        });
+    </script>
+</body>
+
+</html>

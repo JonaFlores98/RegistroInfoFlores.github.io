@@ -42,7 +42,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .mobile-nav {
@@ -69,7 +69,7 @@
             background: white;
             z-index: 1000;
             transition: left 0.3s ease;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
             overflow-y: auto;
         }
 
@@ -616,10 +616,13 @@
             <button class="mobile-menu-btn" id="mobile-menu-toggle">
                 <i class="fas fa-bars"></i>
             </button>
-            <h1 style="margin: 0; font-size: 1.2rem; color: #4361ee;">Estudiantes</h1>
-            <div class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: #4361ee; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;" id="mobile-user-avatar">U</div>
+            <h1>Estudiantes</h1>
+            <div class="user-avatar" id="mobile-user-avatar">U</div>
         </div>
     </div>
+
+    <!-- Overlay para cerrar menú -->
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
 
     <!-- Menú Móvil -->
     <div class="mobile-menu" id="mobile-menu">

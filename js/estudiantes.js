@@ -22,15 +22,24 @@ class StudentsManager {
         const menuToggle = document.getElementById('mobile-menu-toggle');
         const menuClose = document.getElementById('mobile-menu-close');
         const mobileMenu = document.getElementById('mobile-menu');
+        const mobileOverlay = document.getElementById('mobile-menu-overlay');
         const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
 
         if (menuToggle && mobileMenu) {
             menuToggle.addEventListener('click', () => {
                 mobileMenu.classList.add('active');
+                mobileOverlay.classList.add('active');
             });
 
             menuClose.addEventListener('click', () => {
                 mobileMenu.classList.remove('active');
+                mobileOverlay.classList.remove('active');
+            });
+
+            // Cerrar menú al hacer clic en el overlay
+            mobileOverlay.addEventListener('click', () => {
+                mobileMenu.classList.remove('active');
+                mobileOverlay.classList.remove('active');
             });
 
             // Cerrar menú al hacer clic en un enlace
@@ -38,14 +47,8 @@ class StudentsManager {
             menuItems.forEach(item => {
                 item.addEventListener('click', () => {
                     mobileMenu.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
                 });
-            });
-
-            // Cerrar menú al hacer clic fuera
-            mobileMenu.addEventListener('click', (e) => {
-                if (e.target === mobileMenu) {
-                    mobileMenu.classList.remove('active');
-                }
             });
         }
 

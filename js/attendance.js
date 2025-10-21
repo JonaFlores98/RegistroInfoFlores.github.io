@@ -134,51 +134,51 @@ class AttendanceManager {
     }
 
     async loadStudentsForAttendance() {
-    if (!this.selectedGrade) return;
+        if (!this.selectedGrade) return;
 
-    try {
-        console.log('🔍 Cargando estudiantes para grado:', this.selectedGrade);
+        try {
+            console.log('🔍 Cargando estudiantes para grado:', this.selectedGrade);
 
-        this.showLoading('Cargando estudiantes...');
+            this.showLoading('Cargando estudiantes...');
 
-        const studentsSnapshot = await this.db.collection('estudiantes')
-            .where('profesorId', '==', this.currentUser.uid)
-            .where('grado', '==', this.selectedGrade)
-            .get();
+            const studentsSnapshot = await this.db.collection('estudiantes')
+                .where('profesorId', '==', this.currentUser.uid)
+                .where('grado', '==', this.selectedGrade)
+                .get();
 
-        console.log('📊 Resultado de la consulta:', studentsSnapshot.size, 'estudiantes encontrados');
+            console.log('📊 Resultado de la consulta:', studentsSnapshot.size, 'estudiantes encontrados');
 
-        this.students = [];
-        studentsSnapshot.forEach(doc => {
-            const studentData = doc.data();
-            console.log('👤 Estudiante RAW:', doc.id, studentData);
-            
-            // ⭐⭐ CORRECCIÓN: Usar nombreCompleto (con L) ⭐⭐
-            this.students.push({
-                id: doc.id,
-                nombre: studentData.nombreCompleto || 'Estudiante sin nombre',
-                identificacion: studentData.identificacion || 'Sin identificación',
-                grado: studentData.grado,
-                activo: studentData.estado === 'activo'
+            this.students = [];
+            studentsSnapshot.forEach(doc => {
+                const studentData = doc.data();
+                console.log('👤 Estudiante RAW:', doc.id, studentData);
+
+                // ⭐⭐ CORRECCIÓN: Usar nombreCompleto (con L) ⭐⭐
+                this.students.push({
+                    id: doc.id,
+                    nombre: studentData.nombreCompleto || 'Estudiante sin nombre',
+                    identificacion: studentData.identificacion || 'Sin identificación',
+                    grado: studentData.grado,
+                    activo: studentData.estado === 'activo'
+                });
             });
-        });
 
-        console.log('✅ Estudiantes procesados:', this.students);
+            console.log('✅ Estudiantes procesados:', this.students);
 
-        if (this.students.length === 0) {
-            console.warn('⚠️ No se encontraron estudiantes para este grado');
-            this.showNoDataMessage();
-            return;
+            if (this.students.length === 0) {
+                console.warn('⚠️ No se encontraron estudiantes para este grado');
+                this.showNoDataMessage();
+                return;
+            }
+
+            await this.loadAttendanceData();
+            this.renderAttendanceTable();
+
+        } catch (error) {
+            console.error('❌ Error cargando estudiantes:', error);
+            this.showError('Error al cargar estudiantes: ' + error.message);
         }
-
-        await this.loadAttendanceData();
-        this.renderAttendanceTable();
-
-    } catch (error) {
-        console.error('❌ Error cargando estudiantes:', error);
-        this.showError('Error al cargar estudiantes: ' + error.message);
     }
-}
 
     async loadAttendanceData() {
         if (!this.selectedGrade) return;
@@ -230,94 +230,84 @@ class AttendanceManager {
 
         if (!this.students || this.students.length === 0) {
             container.innerHTML = `
-                <div class="no-data">
-                    <div>📝</div>
-                    <h3>No hay estudiantes en este grado</h3>
-                    <p>No se encontraron estudiantes para ${this.getGradeDisplayName(this.selectedGrade)}</p>
-                    <button class="btn btn-primary" onclick="attendanceManager.loadStudentsForAttendance()">
-                        Reintentar
-                    </button>
-                </div>
-            `;
+            <div class="no-data">
+                <div>📝</div>
+                <h3>No hay estudiantes en este grado</h3>
+                <p>No se encontraron estudiantes para ${this.getGradeDisplayName(this.selectedGrade)}</p>
+                <button class="btn btn-primary" onclick="attendanceManager.loadStudentsForAttendance()">
+                    Reintentar
+                </button>
+            </div>
+        `;
             return;
         }
 
         let html = `
-            <div class="attendance-container">
-                <div class="attendance-header">
-                    <h3>📋 Lista de Asistencia - ${this.getGradeDisplayName(this.selectedGrade)}</h3>
-                    <div class="quick-actions">
-                        <button class="btn btn-success quick-action" data-action="all-present">
-                            ✅ Todos Presente
-                        </button>
-                        <button class="btn btn-danger quick-action" data-action="all-absent">
-                            ❌ Todos Ausente
-                        </button>
-                        <button class="btn btn-warning quick-action" data-action="all-late">
-                            ⏰ Todos Tarde
-                        </button>
-                    </div>
-                </div>
-                <div class="attendance-table-container">
-                    <table class="attendance-table">
-                        <thead>
-                            <tr>
-                                <th width="40%">Estudiante</th>
-                                <th width="20%">Estado</th>
-                                <th width="40%">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
+        <div class="attendance-container">
+            <div class="attendance-header">
+                <h3>📋 Lista de Asistencia - ${this.getGradeDisplayName(this.selectedGrade)}</h3>
+                <!-- QUITAMOS LOS BOTONES DE ACCIÓN RÁPIDA DE AQUÍ -->
+            </div>
+            <div class="attendance-table-container">
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th width="40%">Estudiante</th>
+                            <th width="20%">Estado</th>
+                            <th width="40%">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    `;
 
         this.students.forEach((student) => {
             const currentStatus = this.attendanceData[student.id] || 'pendiente';
             const statusClass = this.getStatusClass(currentStatus);
 
             html += `
-                <tr class="student-row" data-student-id="${student.id}">
-                    <td>
-                        <div class="student-info">
-                            <span class="student-name">${student.nombre}</span>
-                            <span class="student-id">${student.identificacion || 'Sin identificación'}</span>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="status-badge ${statusClass}" id="status-${student.id}">
-                            ${this.getStatusDisplayName(currentStatus)}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-status btn-present" data-status="presente" data-student="${student.id}">
-                                ✅ Presente
-                            </button>
-                            <button class="btn-status btn-absent" data-status="ausente" data-student="${student.id}">
-                                ❌ Ausente
-                            </button>
-                            <button class="btn-status btn-late" data-status="tarde" data-student="${student.id}">
-                                ⏰ Tarde
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
+            <tr class="student-row" data-student-id="${student.id}">
+                <td>
+                    <div class="student-info">
+                        <span class="student-name">${student.nombre}</span>
+                        <span class="student-id">${student.identificacion || 'Sin identificación'}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge ${statusClass}" id="status-${student.id}">
+                        ${this.getStatusDisplayName(currentStatus)}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-status btn-present" data-status="presente" data-student="${student.id}">
+                            ✅ Presente
+                        </button>
+                        <button class="btn-status btn-absent" data-status="ausente" data-student="${student.id}">
+                            ❌ Ausente
+                        </button>
+                        <button class="btn-status btn-late" data-status="tarde" data-student="${student.id}">
+                            ⏰ Tarde
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
         });
 
         html += `
-                        </tbody>
-                    </table>
-                </div>
-                <div class="attendance-footer">
-                    <button id="save-attendance" class="btn btn-primary">
-                        💾 Guardar Asistencia
-                    </button>
-                    <div class="summary" id="attendance-summary">
-                        ${this.getSummaryText()}
-                    </div>
+                    </tbody>
+                </table>
+            </div>
+            <div class="attendance-footer">
+                <button id="save-attendance" class="btn btn-primary">
+                    💾 Guardar Asistencia
+                </button>
+                <div class="summary" id="attendance-summary">
+                    ${this.getSummaryText()}
                 </div>
             </div>
-        `;
+        </div>
+    `;
 
         container.innerHTML = html;
         this.attachEventListeners();
@@ -351,20 +341,20 @@ class AttendanceManager {
 
     setStudentStatus(studentId, status) {
         this.attendanceData[studentId] = status;
-        
+
         const statusElement = document.getElementById(`status-${studentId}`);
         if (statusElement) {
             statusElement.textContent = this.getStatusDisplayName(status);
             statusElement.className = `status-badge ${this.getStatusClass(status)}`;
         }
-        
+
         this.updateSummary();
     }
 
     handleQuickAction(action) {
         const statusMap = {
             'all-present': 'presente',
-            'all-absent': 'ausente', 
+            'all-absent': 'ausente',
             'all-late': 'tarde'
         };
 
@@ -405,7 +395,7 @@ class AttendanceManager {
             };
 
             let savePromise;
-            
+
             if (this.attendanceDocId) {
                 savePromise = this.db.collection('asistencias').doc(this.attendanceDocId).update(attendanceRecord);
                 console.log('Actualizando asistencia existente');
@@ -417,7 +407,7 @@ class AttendanceManager {
             await savePromise;
             this.showSuccess('✅ Asistencia guardada correctamente');
             await this.loadAttendanceData();
-            
+
         } catch (error) {
             console.error('Error guardando asistencia:', error);
             this.showError('❌ Error al guardar: ' + error.message);
@@ -451,7 +441,7 @@ class AttendanceManager {
         rows.forEach(row => {
             const studentName = row.querySelector('.student-name').textContent.toLowerCase();
             const studentId = row.querySelector('.student-id').textContent.toLowerCase();
-            
+
             if (studentName.includes(term) || studentId.includes(term)) {
                 row.style.display = '';
             } else {
@@ -474,7 +464,7 @@ class AttendanceManager {
     getStatusClass(status) {
         const classes = {
             'presente': 'status-present',
-            'ausente': 'status-absent', 
+            'ausente': 'status-absent',
             'tarde': 'status-late',
             'pendiente': 'status-pending'
         };
@@ -485,7 +475,7 @@ class AttendanceManager {
         const names = {
             'presente': 'Presente',
             'ausente': 'Ausente',
-            'tarde': 'Tarde', 
+            'tarde': 'Tarde',
             'pendiente': 'Pendiente'
         };
         return names[status] || status;
@@ -581,7 +571,7 @@ class AttendanceManager {
 }
 
 // FUNCIÓN GLOBAL PARA CERRAR MODAL
-window.hideModal = function() {
+window.hideModal = function () {
     const modal = document.getElementById('success-modal');
     if (modal) {
         modal.classList.remove('show');
@@ -589,10 +579,10 @@ window.hideModal = function() {
 };
 
 // Cerrar modal al hacer clic fuera
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('success-modal');
     if (modal) {
-        modal.addEventListener('click', function(e) {
+        modal.addEventListener('click', function (e) {
             if (e.target === modal) {
                 window.hideModal();
             }

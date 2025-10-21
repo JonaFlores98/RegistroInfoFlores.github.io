@@ -33,6 +33,94 @@
             }
         }
 
+        /* MENÚ MÓVIL */
+        .mobile-header {
+            display: none;
+            background: white;
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .mobile-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #4361ee;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 280px;
+            height: 100vh;
+            background: white;
+            z-index: 1000;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        .mobile-menu.active {
+            left: 0;
+        }
+
+        .mobile-menu-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #4361ee, #3a56d4);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mobile-menu-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .mobile-menu-items {
+            padding: 1rem 0;
+        }
+
+        .mobile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            color: #495057;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .mobile-menu-item:hover,
+        .mobile-menu-item.active {
+            background: #f8f9fa;
+            border-left-color: #4361ee;
+            color: #4361ee;
+        }
+
+        .mobile-menu-item i {
+            width: 20px;
+            text-align: center;
+        }
+
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -392,8 +480,26 @@
 
         /* MEDIA QUERY SOLO PARA AJUSTES RESPONSIVE */
         @media (max-width: 768px) {
+            .mobile-header {
+                display: block;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+
             .students-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .student-card {
+                padding: 1rem;
             }
 
             .form-row {
@@ -403,9 +509,26 @@
             .page-header {
                 flex-direction: column;
                 align-items: stretch;
+                margin-bottom: 1rem;
             }
 
             .actions-toolbar {
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .search-box {
+                min-width: auto;
+                flex: 1;
+            }
+
+            .filters-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+
+            .filter-group {
                 justify-content: space-between;
             }
 
@@ -426,13 +549,116 @@
             .btn-group {
                 flex-direction: column-reverse;
             }
+
+            .student-actions {
+                flex-direction: column;
+            }
+
+            .btn-sm {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .empty-state {
+                padding: 2rem 1rem;
+                min-height: 300px;
+            }
+
+            .empty-state i {
+                font-size: 3rem;
+            }
+
+            .empty-state h3 {
+                font-size: 1.3rem;
+            }
+
+            .empty-state p {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .student-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .student-avatar {
+                align-self: flex-start;
+            }
+
+            .actions-toolbar {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            #add-student-btn {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
 
 <body>
+    <!-- Header Móvil -->
+    <div class="mobile-header">
+        <div class="mobile-nav">
+            <button class="mobile-menu-btn" id="mobile-menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 style="margin: 0; font-size: 1.2rem; color: #4361ee;">Estudiantes</h1>
+            <div class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: #4361ee; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;" id="mobile-user-avatar">U</div>
+        </div>
+    </div>
+
+    <!-- Menú Móvil -->
+    <div class="mobile-menu" id="mobile-menu">
+        <div class="mobile-menu-header">
+            <h3>Menú de Navegación</h3>
+            <button class="mobile-menu-close" id="mobile-menu-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="mobile-menu-items">
+            <a href="../dashboard.html" class="mobile-menu-item">
+                <i class="fas fa-tachometer-alt"></i>
+                Dashboard
+            </a>
+            <a href="asistencia.html" class="mobile-menu-item">
+                <i class="fas fa-clipboard-check"></i>
+                Asistencia
+            </a>
+            <a href="calificaciones.html" class="mobile-menu-item">
+                <i class="fas fa-graduation-cap"></i>
+                Calificaciones
+            </a>
+            <a href="estudiantes.html" class="mobile-menu-item active">
+                <i class="fas fa-users"></i>
+                Estudiantes
+            </a>
+            <a href="clases.html" class="mobile-menu-item">
+                <i class="fas fa-book"></i>
+                Clases
+            </a>
+            <a href="#" class="mobile-menu-item" id="mobile-logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                Cerrar Sesión
+            </a>
+        </div>
+    </div>
+
     <div class="container">
-        <!-- Sidebar -->
+        <!-- Sidebar (Desktop) -->
         <div class="sidebar">
             <div class="sidebar-header">
                 <h2>Sistema Docente</h2>
@@ -610,7 +836,6 @@
         </div>
     </div>
 
-    <!-- Agrégalo justo después del modal principal, antes de los scripts -->
     <!-- Modal de Confirmación para Eliminar -->
     <div id="delete-confirm-modal" class="modal">
         <div class="modal-content" style="max-width: 400px;">

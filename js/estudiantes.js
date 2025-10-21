@@ -8,12 +8,54 @@ class StudentsManager {
         this.students = [];
         this.filteredStudents = [];
         this.editingStudent = null;
-        this.studentToDelete = null; // <- NUEVA: para guardar el estudiante a eliminar
+        this.studentToDelete = null;
         this.init();
     }
 
     init() {
         this.setupAuthListener();
+        this.setupMobileMenu(); // Nueva función para el menú móvil
+    }
+
+    // NUEVO: Configuración del menú móvil
+    setupMobileMenu() {
+        const menuToggle = document.getElementById('mobile-menu-toggle');
+        const menuClose = document.getElementById('mobile-menu-close');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
+
+        if (menuToggle && mobileMenu) {
+            menuToggle.addEventListener('click', () => {
+                mobileMenu.classList.add('active');
+            });
+
+            menuClose.addEventListener('click', () => {
+                mobileMenu.classList.remove('active');
+            });
+
+            // Cerrar menú al hacer clic en un enlace
+            const menuItems = mobileMenu.querySelectorAll('.mobile-menu-item');
+            menuItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    mobileMenu.classList.remove('active');
+                });
+            });
+
+            // Cerrar menú al hacer clic fuera
+            mobileMenu.addEventListener('click', (e) => {
+                if (e.target === mobileMenu) {
+                    mobileMenu.classList.remove('active');
+                }
+            });
+        }
+
+        // Configurar logout móvil
+        if (mobileLogoutBtn) {
+            mobileLogoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleLogout();
+            });
+        }
     }
 
     setupAuthListener() {
@@ -23,7 +65,7 @@ class StudentsManager {
             } else {
                 this.currentUser = user;
                 await this.loadUserInfo(user);
-                this.setupEventListeners(); // ¡IMPORTANTE: Mover aquí!
+                this.setupEventListeners();
                 await this.loadStudents();
                 this.setupGradesFilter();
             }
@@ -33,16 +75,22 @@ class StudentsManager {
     async loadUserInfo(user) {
         const userNameElement = document.getElementById('user-name');
         const userAvatar = document.getElementById('user-avatar');
+        const mobileUserAvatar = document.getElementById('mobile-user-avatar');
 
         try {
             const userDoc = await this.db.collection('users').doc(user.uid).get();
             if (userDoc.exists) {
                 this.userData = userDoc.data();
-                if (this.userData.nombreCompleto && userNameElement) {
-                    userNameElement.textContent = this.userData.nombreCompleto;
-                }
-                if (userAvatar && this.userData.nombreCompleto) {
-                    userAvatar.textContent = this.userData.nombreCompleto.charAt(0).toUpperCase();
+                if (this.userData.nombreCompleto) {
+                    if (userNameElement) {
+                        userNameElement.textContent = this.userData.nombreCompleto;
+                    }
+                    if (userAvatar) {
+                        userAvatar.textContent = this.userData.nombreCompleto.charAt(0).toUpperCase();
+                    }
+                    if (mobileUserAvatar) {
+                        mobileUserAvatar.textContent = this.userData.nombreCompleto.charAt(0).toUpperCase();
+                    }
                 }
             }
         } catch (error) {
@@ -62,7 +110,7 @@ class StudentsManager {
         document.getElementById('cancel-btn').addEventListener('click', () => this.hideModal());
         document.getElementById('student-form').addEventListener('submit', (e) => this.handleSubmit(e));
 
-        // Modal de confirmación de eliminación - NUEVO
+        // Modal de confirmación de eliminación
         document.getElementById('close-delete-modal').addEventListener('click', () => this.hideDeleteModal());
         document.getElementById('cancel-delete').addEventListener('click', () => this.hideDeleteModal());
         document.getElementById('confirm-delete').addEventListener('click', () => this.confirmDelete());
@@ -78,15 +126,32 @@ class StudentsManager {
         document.getElementById('delete-confirm-modal').addEventListener('click', (e) => {
             if (e.target.id === 'delete-confirm-modal') this.hideDeleteModal();
         });
+
+        // Logout (desktop)
+        document.getElementById('logout-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleLogout();
+        });
     }
 
-    // Función para manejar errores de Firebase de manera más elegante
+    // NUEVO: Manejo de logout
+    async handleLogout() {
+        try {
+            await this.auth.signOut();
+            window.location.href = '../login.html';
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            alert('Error al cerrar sesión: ' + error.message);
+        }
+    }
+
+    // Resto del código se mantiene igual...
     handleFirebaseError(error, context) {
         console.error(`Error en ${context}:`, error);
 
         if (error.code === 'failed-precondition') {
             console.log(`Índice requerido para: ${context}`);
-            return true; // Indicar que es un error de índice
+            return true;
         }
 
         if (error.code === 'permission-denied') {
@@ -101,7 +166,6 @@ class StudentsManager {
         try {
             console.log('Cargando estudiantes...');
 
-            // CONSULTA SIMPLIFICADA - solo filtrar por profesor, sin ordenar
             const studentsSnapshot = await this.db.collection('estudiantes')
                 .where('profesorId', '==', this.currentUser.uid)
                 .get();
@@ -117,7 +181,6 @@ class StudentsManager {
 
             console.log(`Total estudiantes cargados: ${this.students.length}`);
 
-            // ORDENAR LOCALMENTE - esto no requiere índice
             this.students.sort((a, b) => {
                 const nameA = a.nombreCompleto || '';
                 const nameB = b.nombreCompleto || '';
@@ -131,13 +194,11 @@ class StudentsManager {
         } catch (error) {
             console.error('Error crítico cargando estudiantes:', error);
 
-            // Si hay un error grave, mostrar estado vacío pero no alerta
             this.students = [];
             this.filteredStudents = [];
             this.renderStudents();
             this.updateStudentsCount();
 
-            // Solo mostrar alerta si no es error de índice
             if (!error.message.includes('index') && !error.code === 'failed-precondition') {
                 alert('Error al cargar estudiantes: ' + error.message);
             }
@@ -167,11 +228,9 @@ class StudentsManager {
             'segundo-bach': '2° Bachillerato'
         };
 
-        // Limpiar opciones existentes (excepto la primera)
         while (gradeFilter.children.length > 1) gradeFilter.removeChild(gradeFilter.lastChild);
         while (gradoSelect.children.length > 1) gradoSelect.removeChild(gradoSelect.lastChild);
 
-        // Agregar grados del usuario
         this.userData.grades.forEach(gradeKey => {
             const gradeName = gradesMap[gradeKey];
             if (gradeName) {
@@ -202,7 +261,6 @@ class StudentsManager {
                     </button>
                 </div>
             `;
-            // Agregar event listener al nuevo botón
             document.getElementById('empty-add-btn-2').addEventListener('click', () => this.showModal());
             return;
         }
@@ -284,7 +342,6 @@ class StudentsManager {
             </div>
         `;
 
-        // Agregar event listeners a los botones con delegación
         container.addEventListener('click', (e) => {
             if (e.target.classList.contains('edit-btn') || e.target.closest('.edit-btn')) {
                 const studentId = e.target.closest('.edit-btn').dataset.id;
@@ -307,7 +364,7 @@ class StudentsManager {
     }
 
     showModal(student = null) {
-        console.log('Mostrando modal...'); // Para debug
+        console.log('Mostrando modal...');
         this.editingStudent = student;
         const modal = document.getElementById('student-modal');
         const title = document.getElementById('modal-title');
@@ -369,16 +426,13 @@ class StudentsManager {
                 estado: 'activo'
             };
 
-            // Validación básica
             if (!studentData.nombreCompleto || !studentData.grado) {
                 throw new Error('Nombre completo y grado son obligatorios');
             }
 
             if (this.editingStudent) {
-                // Actualizar estudiante existente
                 await this.db.collection('estudiantes').doc(this.editingStudent.id).update(studentData);
             } else {
-                // Crear nuevo estudiante
                 await this.db.collection('estudiantes').add(studentData);
             }
 
@@ -408,7 +462,6 @@ class StudentsManager {
         }
     }
 
-    // NUEVOS MÉTODOS PARA EL MODAL DE CONFIRMACIÓN
     showDeleteModal(student) {
         const modal = document.getElementById('delete-confirm-modal');
         const message = document.getElementById('delete-message');
@@ -430,7 +483,6 @@ class StudentsManager {
         const studentName = this.studentToDelete.nombreCompleto;
 
         try {
-            // Mostrar loading en el botón
             const confirmBtn = document.getElementById('confirm-delete');
             const originalText = confirmBtn.innerHTML;
             confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
@@ -438,10 +490,7 @@ class StudentsManager {
 
             await this.db.collection('estudiantes').doc(studentId).delete();
 
-            // Ocultar modal y mostrar feedback
             this.hideDeleteModal();
-
-            // Mostrar mensaje de éxito temporal
             this.showSuccessMessage(`Estudiante "${studentName}" eliminado correctamente`);
 
             await this.loadStudents();
@@ -450,41 +499,37 @@ class StudentsManager {
             console.error('Error al eliminar estudiante:', error);
             alert('Error al eliminar estudiante: ' + error.message);
 
-            // Restaurar botón en caso de error
             const confirmBtn = document.getElementById('confirm-delete');
             confirmBtn.innerHTML = '<i class="fas fa-trash"></i> Sí, Eliminar';
             confirmBtn.disabled = false;
         }
     }
 
-    // Método para mostrar mensajes de éxito
     showSuccessMessage(message) {
-        // Crear elemento de mensaje
         const successDiv = document.createElement('div');
         successDiv.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #28a745;
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 6px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        animation: slideInRight 0.3s ease-out;
-    `;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: slideInRight 0.3s ease-out;
+        `;
 
         successDiv.innerHTML = `
-        <i class="fas fa-check-circle"></i>
-        <span>${message}</span>
-    `;
+            <i class="fas fa-check-circle"></i>
+            <span>${message}</span>
+        `;
 
         document.body.appendChild(successDiv);
 
-        // Auto-eliminar después de 3 segundos
         setTimeout(() => {
             if (successDiv.parentNode) {
                 successDiv.style.animation = 'slideOutRight 0.3s ease-in';

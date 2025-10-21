@@ -1,28 +1,31 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="es">
 <head>
     <title>Registro - Sistema Docente</title>
     <link rel="stylesheet" href="css/login.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        /* ESTILOS BASE MEJORADOS */
         .login-box {
             max-width: 700px !important;
             max-height: 90vh;
             overflow-y: auto;
+            margin: 1rem;
         }
 
         .form-section {
             background: #f8f9fa;
-            border-radius: 8px;
-            padding: 1.25rem;
-            margin-bottom: 1.25rem;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e9ecef;
         }
 
         .form-section h3 {
             color: #4361ee;
             margin-bottom: 1rem;
-            font-size: 1rem;
+            font-size: 1.1rem;
             border-bottom: 2px solid #4361ee;
             padding-bottom: 0.5rem;
             display: flex;
@@ -44,114 +47,261 @@
         .grades-container {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 0.5rem;
-            margin-top: 0.5rem;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
         }
 
         .grade-option {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem;
+            gap: 0.75rem;
+            padding: 1rem;
             background: white;
             border: 2px solid #e9ecef;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            min-height: 60px;
         }
 
         .grade-option:hover {
             border-color: #4361ee;
             background: #f8f9ff;
+            transform: translateY(-2px);
         }
 
         .grade-option.selected {
             border-color: #4361ee;
             background: #4361ee;
             color: white;
+            transform: translateY(-2px);
         }
 
         .grade-option input[type="checkbox"] {
             display: none;
         }
 
+        .grade-option i {
+            font-size: 1.1rem;
+            min-width: 20px;
+        }
+
         .password-feedback {
-            font-size: 0.8rem;
-            margin-top: 0.25rem;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 5px;
         }
 
         .valid {
             color: #28a745;
+            background: #f8fff9;
+            border: 1px solid #28a745;
         }
 
         .invalid {
             color: #dc3545;
+            background: #fff8f8;
+            border: 1px solid #dc3545;
         }
 
         .error-message {
             background: #f8d7da;
             color: #721c24;
-            padding: 0.75rem;
-            border-radius: 5px;
+            padding: 1rem;
+            border-radius: 8px;
             margin-bottom: 1rem;
             border: 1px solid #f5c6cb;
             display: none;
             font-size: 0.9rem;
+            text-align: center;
         }
 
         .section-description {
             color: #666;
-            margin-bottom: 0.75rem;
-            font-size: 0.85rem;
-            line-height: 1.4;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
         }
 
         /* Scroll personalizado */
         .login-box::-webkit-scrollbar {
-            width: 6px;
+            width: 8px;
         }
 
         .login-box::-webkit-scrollbar-track {
             background: #f1f1f1;
-            border-radius: 3px;
+            border-radius: 4px;
         }
 
         .login-box::-webkit-scrollbar-thumb {
             background: #4361ee;
-            border-radius: 3px;
+            border-radius: 4px;
         }
 
         .login-box::-webkit-scrollbar-thumb:hover {
             background: #3a56d4;
         }
 
+        /* ===== MEDIA QUERIES MEJORADAS ===== */
+        
+        /* Tablets */
+        @media (max-width: 1024px) {
+            .grades-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Tablets pequeñas y móviles grandes */
         @media (max-width: 768px) {
             .login-box {
                 max-width: 95% !important;
-                margin: 1rem;
+                margin: 0.5rem;
+                max-height: 95vh;
+            }
+
+            .form-section {
+                padding: 1.25rem;
+                margin-bottom: 1.25rem;
             }
 
             .form-row {
                 grid-template-columns: 1fr;
+                gap: 1rem;
             }
 
             .grades-container {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+
+            .grade-option {
+                padding: 1rem 0.75rem;
+                font-size: 0.9rem;
+                min-height: 55px;
+            }
+
+            .form-section h3 {
+                font-size: 1rem;
+            }
+
+            .login-header h1 {
+                font-size: 1.5rem !important;
+            }
+
+            .login-header p {
+                font-size: 0.9rem !important;
             }
         }
 
+        /* Móviles pequeños */
         @media (max-width: 480px) {
-            .grades-container {
-                grid-template-columns: 1fr;
+            .login-container {
+                padding: 0.5rem;
+            }
+
+            .login-box {
+                max-width: 100% !important;
+                margin: 0;
+                border-radius: 12px;
             }
 
             .form-section {
                 padding: 1rem;
+                border-radius: 10px;
             }
+
+            .grades-container {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .grade-option {
+                padding: 1rem;
+                font-size: 0.95rem;
+                min-height: 60px;
+                justify-content: flex-start;
+            }
+
+            .form-group label {
+                font-size: 0.95rem;
+                font-weight: 600;
+            }
+
+            .form-control {
+                font-size: 16px !important; /* Previene zoom en iOS */
+                padding: 12px 15px !important;
+                height: auto !important;
+            }
+
+            .btn {
+                padding: 14px 20px !important;
+                font-size: 1rem !important;
+                min-height: 54px;
+            }
+
+            .password-feedback {
+                font-size: 0.8rem;
+                padding: 0.75rem;
+            }
+
+            .login-header h1 {
+                font-size: 1.4rem !important;
+                text-align: center;
+            }
+
+            .login-header p {
+                text-align: center;
+                font-size: 0.85rem !important;
+            }
+        }
+
+        /* Móviles muy pequeños */
+        @media (max-width: 360px) {
+            .login-box {
+                margin: 0.25rem;
+            }
+
+            .form-section {
+                padding: 0.875rem;
+            }
+
+            .grade-option {
+                padding: 0.875rem;
+                font-size: 0.9rem;
+                min-height: 55px;
+            }
+
+            .form-control {
+                padding: 10px 12px !important;
+            }
+        }
+
+        /* Mejoras específicas para inputs en móviles */
+        @media (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important; /* Previene zoom en iOS */
+            }
+            
+            .form-group {
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Estados de focus mejorados para móviles */
+        .form-control:focus {
+            border-color: #4361ee !important;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1) !important;
+            transform: translateY(-1px);
+        }
+
+        /* Animaciones suaves */
+        .grade-option, .btn, .form-control {
+            transition: all 0.3s ease;
         }
     </style>
 </head>

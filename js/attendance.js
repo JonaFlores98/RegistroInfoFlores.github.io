@@ -432,13 +432,13 @@ class AttendanceManager {
     }
 
     renderAttendanceTable() {
-        const container = document.getElementById('attendance-container');
-        if (!container) return;
+    const container = document.getElementById('attendance-container');
+    if (!container) return;
 
-        console.log('🎨 Renderizando tabla con:', this.students.length, 'estudiantes');
+    console.log('🎨 Renderizando tabla con:', this.students.length, 'estudiantes');
 
-        if (!this.students || this.students.length === 0) {
-            container.innerHTML = `
+    if (!this.students || this.students.length === 0) {
+        container.innerHTML = `
         <div class="no-data">
             <div>📝</div>
             <h3>No hay estudiantes en este grado</h3>
@@ -448,10 +448,10 @@ class AttendanceManager {
             </button>
         </div>
     `;
-            return;
-        }
+        return;
+    }
 
-        let html = `
+    let html = `
     <div class="attendance-container">
         <div class="attendance-header">
             <div>
@@ -471,11 +471,11 @@ class AttendanceManager {
                 <tbody>
     `;
 
-        this.students.forEach((student) => {
-            const currentStatus = this.attendanceData[student.id] || 'pendiente';
-            const statusClass = this.getStatusClass(currentStatus);
+    this.students.forEach((student) => {
+        const currentStatus = this.attendanceData[student.id] || 'pendiente';
+        const statusClass = this.getStatusClass(currentStatus);
 
-            html += `
+        html += `
         <tr class="student-row" data-student-id="${student.id}">
             <td>
                 <div class="student-info">
@@ -506,9 +506,9 @@ class AttendanceManager {
             </td>
         </tr>
     `;
-        });
+    });
 
-        html += `
+    html += `
                 </tbody>
             </table>
         </div>
@@ -525,10 +525,10 @@ class AttendanceManager {
     </div>
     `;
 
-        container.innerHTML = html;
-        this.attachEventListeners();
-        this.updateSummary();
-    }
+    container.innerHTML = html;
+    this.attachEventListeners();
+    this.updateSummary();
+}
 
     attachEventListeners() {
         // Botones de estado
